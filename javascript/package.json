@@ -1,0 +1,44 @@
+{
+  "name": "advent-of-code-2020-js",
+  "version": "0.1.0",
+  "description": "Javascript solutions to Advent of Code 2020",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/Jakub-L/advent-of-code-2020.git"
+  },
+  "keywords": [
+    "advent"
+  ],
+  "author": "Jakub-L",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Jakub-L/advent-of-code-2020/issues"
+  },
+  "homepage": "https://github.com/Jakub-L/advent-of-code-2020#readme",
+  "devDependencies": {
+    "eslint": "^7.14.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.22.1"
+  },
+  "eslintConfig": {
+    "env": {
+      "commonjs": true,
+      "es2021": true,
+      "node": true
+    },
+    "extends": [
+      "airbnb-base"
+    ],
+    "parserOptions": {
+      "ecmaVersion": 12
+    },
+    "rules": {
+      "no-restricted-syntax": "off",
+      "no-console": "off"
+    }
+  }
+}
