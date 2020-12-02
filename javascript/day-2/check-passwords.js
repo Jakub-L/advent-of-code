@@ -8,7 +8,7 @@ const countPasswordsByNumber = (passwords) =>
     const [min, max, char, pwd] = passwordRow.split(/[\s:-]+/);
     const matches = (pwd.match(new RegExp(char, 'g')) || []).length;
     return matches >= min && matches <= max ? acc + 1 : acc;
-  }, 0);11:00 AM
+  }, 0)
 
 /**
  * Checks how many passwords fulfil their rules, assuming the rules define only one position at which a letter must appear
