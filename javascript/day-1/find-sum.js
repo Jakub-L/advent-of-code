@@ -4,6 +4,7 @@
  * @param {number} target - Number to which targets should sum
  * @param {number} n - How many numbers are supposed to make up the target number
  * @param {Object} numbersMemo - Memoized object of already-inspected numbers
+ * @returns {number[]} Array of n numbers that make up the target or empty array if target can't be made
  */
 const findSum = (array, target, n, numbersMemo) => {
   // { ...undefined } is deeply equal to {}
