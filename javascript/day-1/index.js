@@ -1,4 +1,4 @@
-const { findSum } = require('./find-sum');
+const { findSum } = require('./utils');
 const input = require('../../inputs/day-1.json');
 
 function main() {

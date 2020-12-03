@@ -1,7 +1,7 @@
 const {
   countPasswordsByNumber,
   countPasswordsByPosition,
-} = require('./check-passwords');
+} = require('./utils');
 const input = require('../../inputs/day-2.json');
 
 function main() {

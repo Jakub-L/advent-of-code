@@ -1,4 +1,4 @@
-const { countTrees } = require('./tree-counter');
+const { countTrees } = require('./utils');
 const input = require('../../inputs/day-3.json');
 
 function main() {
