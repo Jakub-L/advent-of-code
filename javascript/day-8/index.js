@@ -1,4 +1,5 @@
-const { cpu, fixIncorrectInstruction } = require('./utils');
+const { cpu } = require('../global-utils');
+const { fixIncorrectInstruction } = require('./utils');
 const input = require('../../inputs/day-8.json');
 
 function main() {

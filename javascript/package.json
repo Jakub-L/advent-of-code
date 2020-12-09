@@ -42,7 +42,8 @@
       "no-restricted-syntax": "off",
       "no-console": "off",
       "no-continue": "off",
-      "max-len": "off"
+      "max-len": "off",
+      "no-param-reassign": "off"
     }
   }
 }
