@@ -18,7 +18,7 @@ const findInvalidNumber = (data, n = 25) => {
  * Finds the encryption weakness in the encoded data
  * @param {number[]} data - XMAS encoded data
  * @param {number} invalidNumber - Number that can't be made up of sums of N previous numbers
- * @returns {number} Product of minimum and maximum of contiguous set summing to invalidNumber
+ * @returns {number} Product of minimum and maximum of contiguous set summing to invalidNumber, null if no contiguous set exists
  */
 const findEncryptionWeakness = (data, invalidNumber) => {
   const arr = [];
@@ -33,6 +33,7 @@ const findEncryptionWeakness = (data, invalidNumber) => {
       return Math.min(...arr) + Math.max(...arr);
     }
   }
+  return null;
 };
 
 module.exports = { findInvalidNumber, findEncryptionWeakness };
