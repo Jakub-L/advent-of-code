@@ -41,12 +41,10 @@ const findAdapterCombinations = (jolts, start = 0, joltRange = [1, 2, 3]) => {
    * @returns {number} Number of leaves descending from 'val'
    */
   const recurseTree = (val) => {
-    // Generate array of possible children from the tree index
     const children = joltRange.reduce(
       (acc, diff) => (val + diff in tree ? [...acc, val + diff] : acc),
       []
     );
-
     for (let i = 0; i < children.length; i += 1) {
       let child = children[i];
       if (tree[child].mapped) tree[val].leaves += tree[child].leaves;
