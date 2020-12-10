@@ -25,9 +25,10 @@ const findJoltDiffs = (jolts) => {
  * Finds the number of combinations of adapters with a depth-first tree traversal
  * @param {number[]} jolts - Array of nominal joltages for each adapter
  * @param {number=0} start - Number at which to start search, i.e. socket joltage
+ * @param {number[]=[1,2,3]} joltRange - Possible joltage differences
  * @returns {number} Number of ways to reach the device's joltage
  */
-const findAdapterCombinations = (jolts, start = 0) => {
+const findAdapterCombinations = (jolts, start = 0, joltRange = [1, 2, 3]) => {
   // mapped: true if all descendants have been explored
   // leaves: number of descendants with no children
   const tree = jolts.reduce(
@@ -41,7 +42,7 @@ const findAdapterCombinations = (jolts, start = 0) => {
    */
   const recurseTree = (val) => {
     // Generate array of possible children from the tree index
-    const children = [1, 2, 3].reduce(
+    const children = joltRange.reduce(
       (acc, diff) => (val + diff in tree ? [...acc, val + diff] : acc),
       []
     );
