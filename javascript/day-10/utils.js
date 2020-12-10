@@ -19,7 +19,7 @@ const findJoltDiffs = (jolts) => {
 
   for (let i = 0; i < jolts.length; i += 1) {
     for (let difference = 1; difference <= 3; difference += 1) {
-      if (joltDict[currentJolt + difference]) {
+      if (currentJolt + difference in joltDict) {
         differences[difference] += 1;
         currentJolt += difference;
         break;
