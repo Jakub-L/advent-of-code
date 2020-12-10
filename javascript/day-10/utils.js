@@ -34,24 +34,15 @@ const findAdapterCombinations = (jolts, startVal = 0) => {
   let count = 0;
 
   const recurseTree = (currVal) => {
-    const children = [1, 2, 3].reduce((acc, diff) => {
-      const child = currVal + diff;
-      if (child in index) {
-        if (index[child]) {
-          console.log(child, ' visited');
-          count += 1;
-        } else acc.push(child);
-      }
-      return acc;
-    }, []);
-    // console.log(currVal, children)
+    const children = [1, 2, 3].reduce(
+      (acc, diff) => (currVal + diff in index ? [...acc, currVal + diff] : acc),
+      []
+    );
     if (!children.length) {
-      // No children or all children have been visited
-      index[currVal] = true;
+      // No children (end of tree)
+      count += 1;
     } else {
-      for (let i = 0; i < children.length; i += 1) {
-        recurseTree(children[i]);
-      }
+      children.forEach((child) => recurseTree(child));
     }
   };
 
