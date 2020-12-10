@@ -1,4 +1,3 @@
-// const { cpu } = require('../global-utils');
 const { findInvalidNumber, findEncryptionWeakness } = require('./utils');
 const input = require('../../inputs/day-9.json');
 
