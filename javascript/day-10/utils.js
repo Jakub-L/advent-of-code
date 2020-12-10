@@ -21,25 +21,42 @@ const findJoltDiffs = (jolts) => {
   return differences;
 };
 
-const findAdapterCombinations = (jolts, startVal = 0) => {
-  const index = jolts.reduce((dict, e) => ({ ...dict, [e]: false }), {});
-  let count = 0;
-
-  const recurseTree = (currVal) => {
+/**
+ * Finds the number of combinations of adapters with a depth-first tree traversal
+ * @param {number[]} jolts - Array of nominal joltages for each adapter
+ * @param {number=0} start - Number at which to start search, i.e. socket joltage
+ * @returns {number} Number of ways to reach the device's joltage
+ */
+const findAdapterCombinations = (jolts, start = 0) => {
+  // mapped: true if all descendants have been explored
+  // leaves: number of descendants with no children
+  const tree = jolts.reduce(
+    (tree, jolt) => ({ ...tree, [jolt]: { mapped: false, leaves: 0 } }),
+    { [start]: { mapped: false, leaves: 0 } }
+  );
+  /**
+   * Recursively finds the number of leaves for a joltage
+   * @param {number} val - Current joltage being investigated
+   * @returns {number} Number of leaves descending from 'val'
+   */
+  const recurseTree = (val) => {
+    // Generate array of possible children from the tree index
     const children = [1, 2, 3].reduce(
-      (acc, diff) => (currVal + diff in index ? [...acc, currVal + diff] : acc),
+      (acc, diff) => (val + diff in tree ? [...acc, val + diff] : acc),
       []
     );
-    if (!children.length) {
-      // No children (end of tree)
-      count += 1;
-    } else {
-      children.forEach((child) => recurseTree(child));
+
+    for (let i = 0; i < children.length; i += 1) {
+      let child = children[i];
+      if (tree[child].mapped) tree[val].leaves += tree[child].leaves;
+      else tree[val].leaves += recurseTree(child);
     }
+    tree[val] = { mapped: true, leaves: tree[val].leaves || 1 };
+    return tree[val].leaves;
   };
 
-  recurseTree(startVal);
-  return count;
+  recurseTree(start);
+  return tree[0].leaves;
 };
 
 module.exports = { findJoltDiffs, findAdapterCombinations };
