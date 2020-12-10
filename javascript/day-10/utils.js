@@ -1,18 +1,10 @@
 /**
- * Converts unsorted array of adapter joltages to index object
- * @param {number[]} jolts - Array of nominal joltages for each adapter
- * @returns {object} Quick reference index for adapters, with value indicating whether node has been visited
- */
-const makeJoltDict = (jolts) =>
-  jolts.reduce((dict, e) => ({ ...dict, [e]: false }), {});
-
-/**
  * Finds the number of stepped differences when using all jolt adaptors
  * @param {number[]} jolts - Array of nominal joltages for each adapter
  * @returns {object} Object with keys representing joltage differences and values of their counts, null if can't use all adapters
  */
 const findJoltDiffs = (jolts) => {
-  const joltDict = makeJoltDict(jolts);
+  const joltDict = jolts.reduce((dict, e) => ({ ...dict, [e]: true }), {});
   // Last diff accounts for the step from adapter to device
   const differences = { 1: 0, 2: 0, 3: 1 };
   let currentJolt = 0;
@@ -30,7 +22,7 @@ const findJoltDiffs = (jolts) => {
 };
 
 const findAdapterCombinations = (jolts, startVal = 0) => {
-  const index = makeJoltDict(jolts);
+  const index = jolts.reduce((dict, e) => ({ ...dict, [e]: false }), {});
   let count = 0;
 
   const recurseTree = (currVal) => {
