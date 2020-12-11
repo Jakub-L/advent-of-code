@@ -1,9 +1,9 @@
 const {
   sumOfCounts,
   countUniqueAnswers,
-  countSharedAnswers
+  countSharedAnswers,
 } = require('./utils');
-const input = require('../../inputs/day-6.json');
+const input = require('../../inputs/day-06.json');
 
 function main() {
   console.log(`Part 1: ${sumOfCounts(input, countUniqueAnswers)}`);

@@ -1,5 +1,5 @@
 const { countPassports, countValidPassports } = require('./utils');
-const input = require('../../inputs/day-4.json');
+const input = require('../../inputs/day-04.json');
 
 function main() {
   console.log(`Part 1: ${countPassports(input)}`);

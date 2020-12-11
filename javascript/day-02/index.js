@@ -1,8 +1,5 @@
-const {
-  countPasswordsByNumber,
-  countPasswordsByPosition,
-} = require('./utils');
-const input = require('../../inputs/day-2.json');
+const { countPasswordsByNumber, countPasswordsByPosition } = require('./utils');
+const input = require('../../inputs/day-02.json');
 
 function main() {
   console.log(`Part 1: ${countPasswordsByNumber(input)}`);

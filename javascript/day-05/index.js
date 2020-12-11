@@ -1,5 +1,5 @@
 const { maxSeatID, findMySeatID } = require('./utils');
-const input = require('../../inputs/day-5.json');
+const input = require('../../inputs/day-05.json');
 
 function main() {
   console.log(`Part 1: ${maxSeatID(input)}`);

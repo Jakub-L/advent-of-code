@@ -1,5 +1,5 @@
 const { findInvalidNumber, findEncryptionWeakness } = require('./utils');
-const input = require('../../inputs/day-9.json');
+const input = require('../../inputs/day-09.json');
 
 function main() {
   console.log(`Part 1: ${findInvalidNumber(input, 25)}`);

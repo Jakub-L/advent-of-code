@@ -1,5 +1,5 @@
 const { findSum } = require('../global-utils');
-const input = require('../../inputs/day-1.json');
+const input = require('../../inputs/day-01.json');
 
 function main() {
   const p1 = findSum(input, 2020, 2);

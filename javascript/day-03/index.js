@@ -1,5 +1,5 @@
 const { countTrees } = require('./utils');
-const input = require('../../inputs/day-3.json');
+const input = require('../../inputs/day-03.json');
 
 function main() {
   console.log(`Part 1: ${countTrees(input, 3, 1)}`);
@@ -13,7 +13,7 @@ function main() {
   ];
   console.log(
     `Part 2: ${p2.reduce(
-      (acc, [ dx, dy ]) => acc * countTrees(input, dx, dy),
+      (acc, [dx, dy]) => acc * countTrees(input, dx, dy),
       1
     )}`
   );
