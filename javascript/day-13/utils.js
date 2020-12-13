@@ -23,46 +23,22 @@ const findNextBus = ([ts, schedule]) =>
 
 /**
  * Finds the first time for which buses come in subsequent times
- * Based on the Python 3.6 Chinese Remainder Theorem algorithm: https://rosettacode.org/wiki/Chinese_remainder_theorem#Python_3.6
  * @param {[ts: string, schedule: string]} busNotes - Puzzle-compliant input string. First element is the timestamp, the second is the bus schedule
  * @returns {number} Departure of first of the subsequent buses
  */
 const findSubsequentTime = ([_, schedule]) => {
-  const modularInverse = (a, b) => {
-    const b0 = b;
-    let [x0, x1, q] = [0, 1, Math.floor(a / b)];
-    while (a > 1) {
-      q = Math.floor(a / b);
-      [a, b] = [b, a % b];
-      [x0, x1] = [x1 - q * x0, x0];
-    }
-    return x1 < 0 ? x1 + b0 : x1;
-  };
-  const chineseRemainder = (mods, vals) => {
-    const prod = mods.reduce((acc, mod) => acc * mod);
-    const sum = mods.reduce((acc, mod, i) => {
-      const p = Math.floor(prod / mod);
-      return acc + vals[i] * modularInverse(p, mod) * p;
-    }, 0);
-    return sum % prod;
-  };
-
-  const parsedSchedule = schedule.split(',').reduce(
-    (acc, bus, i) => {
-      console.log(bus, i);
-      if (bus === 'x') return acc;
-      const freq = Number(bus);
-      const remainder = i ? freq - i : 0;
-      return {
-        mods: [...acc.mods, freq],
-        vals: [...acc.vals, remainder]
-      };
-    },
-    { mods: [], vals: [] }
-  );
-
-  console.log(parsedSchedule.mods, parsedSchedule.vals);
-  return chineseRemainder(parsedSchedule.mods, parsedSchedule.vals);
+  const [firstBus, ...buses] = schedule
+    .split(',')
+    .reduce(
+      (acc, bus, i) => (bus === 'x' ? acc : [...acc, { n: Number(bus), i }]),
+      []
+    );
+  let increment = firstBus.n;
+  return buses.reduce((t, { n, i }) => {
+    while ((t + i) % n !== 0) t += increment;
+    increment *= n;
+    return t;
+  }, firstBus.n);
 };
 
 module.exports = { findNextBus, findSubsequentTime };
