@@ -1,3 +1,9 @@
+/**
+ * Finds the last value in the elf game
+ * @param {string} start - Comma-separated numbers initiating the sequence
+ * @param {number} endTurn - How many turns to run the sequence
+ * @returns {number} The last number in the sequence
+ */
 const elfGame = (start, endTurn) => {
   const input = start.split(',').map(Number);
   const memory = new Map();
