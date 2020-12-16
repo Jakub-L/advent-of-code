@@ -1,47 +1,68 @@
+//
+// INPUT PARSING
+//
 /**
- * Converts field limit strings to a structured object
+ * Converts ticket field definitions to parseable array
  * @param {string[]} fieldStrings - Definitions of fields and their permitted ranges
- * @returns {Object[]} Array of objects containing field name and field limits, [lower1, upper1, lower2, upper2]
+ * @returns {Object[]} Array of objects containing field name and field limits
  */
 const parseFields = (fieldStrings) =>
   fieldStrings.reduce((acc, string) => {
-    const [name, l1, u1, l2, u2] = string.split(/: |-| or /);
-    return [
-      ...acc,
-      { name, limits: [Number(l1), Number(u1), Number(l2), Number(u2)] },
-    ];
+    const [name, ...limits] = string.split(/: |-| or /);
+    return [...acc, { name, limits: limits.map(Number) }];
   }, []);
 
 /**
+ * Converts a single ticket to an array
+ * @param {string} ticketString - Individual ticket in single-line string form
+ * @returns {number[]} Ticket in array form
+ */
+const parseTicket = (ticketString) => ticketString.split(',').map(Number);
+
+/**
+ * Converts nearby tickets string array to numeric fomr
+ * @param {string[]} nearbyTickets - Array of individual tickets in single-line string form
+ * @returns {number[][]} Tickets as arrays of numbers
+ */
+const parseNearbyTickets = (nearbyTickets) => nearbyTickets.map(parseTicket);
+
+//
+// PART 1
+//
+/**
  * Checks if a number falls within limits (inclusive)
  * @param {number} number - Number to check
- * @param {number[]} limits - Array of field limits, [lower1, upper1, lower2, upper2]
- * @return {boolean} True if number falls within either limit, false otherwise
+ * @param {number[]} limits - Array of field limit pairs (lower, then upper, then next lower, etc.)
+ * @return {boolean} True if number falls within any pair of limits, false otherwise
  */
-const isInLimits = (number, limits) =>
-  (number >= limits[0] && number <= limits[1]) ||
-  (number >= limits[2] && number <= limits[3]);
+const isInLimits = (number, limits) => {
+  for (let i = 0; i < limits.length; i += 2) {
+    if (number >= limits[i] && number <= limits[i + 1]) return true;
+  }
+  return false;
+};
+/**
+ * Finds the first number in a ticket that doesn't fit any field's limits
+ * @param {number[]} ticket - Ticket in array form
+ * @param {Object[]} fields - Array of objects containing field name and field limits
+ * @returns {number|undefined} Invalid number, or undefined if all numbers are valid
+ */
+const findInvalidNumber = (ticket, fields) =>
+  ticket.find((num) => fields.every(({ limits }) => !isInLimits(num, limits)));
 
 /**
  * Calculates the ticket scanning error rate
- * @param {string[]} fieldStrings - Definitions of fields and their permitted ranges
- * @param {string[]} tickets - Array of comma-separated numbers, representing nearby tickets
- * @returns {number} Sum of all fields that do not fit any field limits
+ * @param {Object} ticketDocument - Object containing ticket fields, user's ticket and nearby tickets
+ * @returns {number} Sum of all invalid numbers
  */
-const findTicketErrorRate = (fieldStrings, tickets) => {
-  const fields = parseFields(fieldStrings);
+const findTicketErrorRate = (ticketDocument) => {
+  const fields = parseFields(ticketDocument.fields);
+  const tickets = parseNearbyTickets(ticketDocument.nearbyTickets);
+
   return tickets.reduce(
-    (err, ticket) =>
-      err +
-      (ticket
-        .split(',')
-        .map(Number)
-        .find((num) =>
-          fields.every(({ limits }) => !isInLimits(+num, limits))
-        ) || 0),
+    (sum, ticket) => sum + (findInvalidNumber(ticket, fields) || 0),
     0
   );
 };
-
 
 module.exports = { findTicketErrorRate };
