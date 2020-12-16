@@ -65,4 +65,71 @@ const findTicketErrorRate = (ticketDocument) => {
   );
 };
 
-module.exports = { findTicketErrorRate };
+//
+// PART 2
+//
+/**
+ * For each column in tickets finds the fields that have their requirements satisfied.
+ * @param {Object} ticketDocument - Object containing ticket fields, user's ticket and nearby tickets
+ * @return {Object[]} Array of objects with key/values: col (column in ticket) and fields
+ *                    (possible field names for which the column passes limit testing)
+ *                    sorted from fewest possible fields to most
+ */
+const findPossibleMatches = (ticketDocument) => {
+  const fields = parseFields(ticketDocument.fields);
+  const tickets = parseNearbyTickets(ticketDocument.nearbyTickets).filter(
+    (ticket) => findInvalidNumber(ticket, fields) === undefined
+  );
+  const possibleMatches = [];
+  for (let col = 0; col < tickets[0].length; col += 1) {
+    possibleMatches.push({
+      col,
+      fields: fields.reduce(
+        (acc, { name, limits }) =>
+          tickets.every((t) => isInLimits(t[col], limits))
+            ? [...acc, name]
+            : acc,
+        []
+      )
+    });
+  }
+  return possibleMatches.sort((a, b) => a.fields.length - b.fields.length);
+};
+
+/**
+ * Finds the actual field names for each column of the ticket
+ * @param {Object} ticketDocument - Object containing ticket fields, user's ticket and nearby tickets
+ * @returns {Object[]} Array of objects containing a col key (indicating the column in the ticket), and a
+ *                     field key (indicating the name of the field that has been matched)
+ */
+const decodeFields = (ticketDocument) =>
+  findPossibleMatches(ticketDocument).reduce((acc, { col, fields }) => {
+    return [
+      ...acc,
+      {
+        col,
+        // Find first field that hasn't been assigned yet
+        field: fields.find((option) =>
+          acc.every(({ field }) => option !== field)
+        )
+      }
+    ];
+  }, []);
+
+/**
+ * Multiplies the values of all the fields beginning with "Departure" on myTicket
+ * @param {Object} ticketDocument - Object containing ticket fields, user's ticket and nearby tickets
+ * @returns {number} Product of values of all fields beginning with "departure"
+ */
+const multiplyDepartureFields = (ticketDocument) => {
+  const myTicket = parseTicket(ticketDocument.myTicket);
+  const decoded = decodeFields(ticketDocument);
+
+  return decoded.reduce(
+    (acc, { col, field }) =>
+      field.startsWith('departure') ? acc * myTicket[col] : acc,
+    1
+  );
+};
+
+module.exports = { findTicketErrorRate, multiplyDepartureFields };
