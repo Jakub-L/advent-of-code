@@ -20,6 +20,7 @@ const getPossibleTranslations = (food) =>
   food.reduce((dict, { allrs, ingrs }) => {
     for (const allr of allrs) {
       if (allr in dict) {
+        // Keep only words which occured earlier and in the current food
         dict[allr] = dict[allr].filter((word) => ingrs.includes(word));
       } else {
         dict[allr] = [...ingrs];
