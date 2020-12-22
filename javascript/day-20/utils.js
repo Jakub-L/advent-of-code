@@ -204,7 +204,7 @@ const findCornerProduct = (input) => {
 /**
  * Reconstructs the map from given tiles. Orientation non-specific
  * @param {string[][]} input - Raw representation of a tile, with first row containing the tile ID
- * @returns {string[]} Reconstructed map, with edges of each tile removed
+ * @returns {string[][]} Reconstructed map, with edges of each tile removed
  */
 const reconstructMap = (input) => {
   const tiles = parseInput(input);
@@ -263,6 +263,11 @@ const reconstructMap = (input) => {
   }, []);
 };
 
+/**
+ * Reconstructs a map and finds the roughness of the sea mapped, ignoring monsters
+ * @param {string[][]} input - Raw representation of a tile, with first row containing the tile ID
+ * @returns {number} The sea roughness of the mapped sea section
+ */
 const findSeaRoughness = (input) => {
   let reconstructed = reconstructMap(input);
   const monster = [
@@ -271,6 +276,11 @@ const findSeaRoughness = (input) => {
     ' #  #  #  #  #  #   '
   ].map((row) => row.split(''));
 
+  /**
+   * Finds how many times the monster appears in a given map
+   * @param {string[][]} seaMap - Reconstructed map, with edges of each tile removed
+   * @returns {number} Count of monster appearances
+   */
   const countMonsters = (seaMap) => {
     let count = 0;
     for (let row = 0; row < seaMap.length - monster.length; row += 1) {
@@ -291,7 +301,7 @@ const findSeaRoughness = (input) => {
     return count;
   };
 
-  // Find monster count for all orientations of the grid
+  // Find monster count for all orientations of the grid, then keep the only non-zero one
   const allCounts = [];
   for (let i = 0; i < 4; i += 1) {
     allCounts.push(
@@ -301,8 +311,9 @@ const findSeaRoughness = (input) => {
     );
     reconstructed = rotateCCW(reconstructed);
   }
-
   const count = allCounts.find((c) => c);
+
+  // Find the actual roughness
   const totalRoughness = reconstructed
     .map((row) => row.join(''))
     .join('')
