@@ -1,3 +1,28 @@
+/* eslint-disable prefer-destructuring */
+
+//
+// DEFINITIONS
+//
+/**
+ * @typedef Cup
+ * @description Node of a linked list
+ * @param {number} value - Value of the node
+ * @param {Cup|null} left - Left neighbouring node
+ * @param {Cup|null} right - Right neighbouring node
+ */
+
+//
+// FUNCTIONALITY
+//
+/** Cup, a node of of a linked list */
+class Cup {
+  constructor(value) {
+    this.value = value;
+    this.right = null;
+    this.left = null;
+  }
+}
+
 /**
  * Converts input string into array
  * @param {string} inputString - String defining the cup numberings
@@ -6,54 +31,106 @@
 const parseString = (inputString) => inputString.split('').map(Number);
 
 /**
- * Performs a single iteration of the crab game
- * @param {number[]} cups - Array of cups
- * @param {number} i - Cup index to look at
- * @param {number} min - Minimum number on any of the cups
- * @param {number} max - Maximum number on any of the cups
- * @returns {number[]} Cup arrangement after the move
+ * Converts cup input into a linked list dictionary, keyed by cup value
+ * @param {string} input - String defining the cup numberings
+ * @param {number} cupCount - How many cups should be in the game
+ * @returns {Object.<number, Cup>} Dictionary of cups
  */
-const move = (cups, i, min, max) => {
-  const [newCups, num] = [[...cups], cups[i]];
-  // Take out three cups immediately following the indexed cup
-  let rem = newCups.splice(i + 1, 3);
-  if (rem.length !== 3) rem = [...rem, ...newCups.splice(0, 3 - rem.length)];
+const getCups = (input, cupCount) => {
+  const dict = {};
+  const startCups = parseString(input);
+  let prevCup = null;
+  for (let i = 0; i < cupCount; i += 1) {
+    const num = i < startCups.length ? startCups[i] : i + 1;
+    const currCup = new Cup(num);
+    dict[num] = currCup;
 
-  // Find destination value
-  let dest = cups[i] - 1 < min ? max : cups[i] - 1;
-  while (rem.includes(dest)) dest = dest - 1 < min ? max : dest - 1;
+    if (prevCup) {
+      prevCup.right = currCup;
+      currCup.left = prevCup;
+    }
+    prevCup = currCup;
+  }
 
-  // Replace the cups and reorder array so the initial number is at same index
-  newCups.splice(newCups.indexOf(dest) + 1, 0, ...rem);
-  while (newCups[i] !== num) newCups.unshift(newCups.pop());
-  return newCups;
+  // Close the loop by linking first and last items
+  dict[startCups[0]].left = prevCup;
+  prevCup.right = dict[startCups[0]];
+  return dict;
 };
 
 /**
- * Plays the crab game
- * @param {string} input - String defining the initial cup numberings
- * @param {number} maxMoves - Number of moves for the game to complete
- * @returns {number[]} Cup arrangement after the specified number of moves
+ * Plays the crab cup game and finds final state
+ * @param {string} input - String defining the cup numberings
+ * @param {number} cupCount - How many cups should be in the game
+ * @param {number} maxMoves - How many moves should the crab make
+ * @returns {Object.<number, Cup>} Dictionary of cups with linkings as of _after_ last move
  */
-const playGame = (input, maxMoves) => {
-  let cups = parseString(input);
-  const [minCup, maxCup] = [Math.min(...cups), Math.max(...cups)];
+const playGame = (input, cupCount, maxMoves) => {
+  const cups = getCups(input, cupCount);
+  const [min, max] = [1, cupCount];
+  let currCup = cups[input[0]];
+
   for (let i = 0; i < maxMoves; i += 1) {
-    cups = move(cups, i % cups.length, minCup, maxCup);
+    // Get removed cup nodes
+    const removed = [
+      currCup.right,
+      currCup.right.right,
+      currCup.right.right.right
+    ];
+
+    // Repoint the list to avoid the removed elements
+    currCup.right = removed[2].right;
+    currCup.right.left = currCup;
+
+    // Find destination
+    let dest = currCup.value - 1 < min ? max : currCup.value - 1;
+    while (removed.map((c) => c.value).includes(dest)) {
+      dest = dest - 1 < min ? max : dest - 1;
+    }
+
+    // Get destination node and reinsert removed elements
+    const destCup = cups[dest];
+    removed[2].right = destCup.right;
+    removed[2].right.left = removed[2];
+    destCup.right = removed[0];
+    destCup.right.left = destCup;
+
+    // Move on to next cup
+    currCup = currCup.right;
   }
+
   return cups;
 };
 
 /**
- * Finds the labels of cups in a final orientation
- * @param {string} input - String defining the initial cup numberings
- * @param {number} maxMoves - Number of moves for the game to complete
- * @returns {string} Order of cups after cup #1
+ * Finds the cup ordering after cup #1 after the game is completed
+ * @param {string} input - String defining the cup numberings
+ * @param {number=9} cupCount - How many cups should be in the game
+ * @param {number=100} maxMoves - How many moves should the crab make
+ * @returns {string} Cup ordering after cup labelled "1", joined
  */
-const getLabelsAfterGame = (input, maxMoves = 100) => {
-  const cups = playGame(input, maxMoves);
-  while (cups[0] !== 1) cups.unshift(cups.pop());
-  return cups.slice(1).join('');
+const findCupLabels = (input, cupCount = 9, maxMoves = 100) => {
+  const cups = playGame(input, cupCount, maxMoves);
+  const labels = [];
+  let currCup = cups['1'].right;
+  while (currCup.value !== 1) {
+    labels.push(currCup.value);
+    currCup = currCup.right;
+  }
+  return labels.join('');
 };
 
-module.exports = { getLabelsAfterGame };
+/**
+ * Finds the product of cups with stars underneath them
+ * @param {string} input - String defining the cup numberings
+ * @param {number=1000000} cupCount - How many cups should be in the game
+ * @param {number=10000000} maxMoves - How many moves should the crab make
+ * @returns {number} Product of the labels of two cups immediately following Cup #1
+ */
+const findStarCupProduct = (input, cupCount = 1000000, maxMoves = 10000000) => {
+  const cups = playGame(input, cupCount, maxMoves);
+  const starCups = [cups[1].right, cups[1].right.right];
+  return starCups.reduce((prod, cup) => prod * cup.value, 1);
+};
+
+module.exports = { findCupLabels, findStarCupProduct };

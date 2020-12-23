@@ -1,11 +1,9 @@
-const { getLabelsAfterGame, getStarCups } = require('./utils');
+const { findCupLabels, findStarCupProduct } = require('./utils');
 const input = require('../../inputs/day-23.json');
 
 function main() {
-  const test = '389125467';
-  console.log(getStarCups(test));
-  // console.log(`Part 1: ${getLabelsAfterGame(input)}`);
-  // console.log(`Part 2: ${}`);
+  console.log(`Part 1: ${findCupLabels(input)}`);
+  console.log(`Part 2: ${findStarCupProduct(input)}`);
 }
 
 main();
