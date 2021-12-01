@@ -4,10 +4,7 @@
  */
 import { readInput } from '../utils';
 
-// Input parsing
-const testDepths: Array<number> = [
-  199, 200, 208, 210, 200, 207, 240, 269, 260, 263
-];
+// INPUTS
 const depths: Array<number> = readInput('./../../inputs/day-01.txt').map(
   Number
 );
@@ -24,7 +21,6 @@ const countIncreases = (depths: Array<number>): number =>
       i !== arr.length && depth < arr[i + 1] ? acc + 1 : acc,
     0
   );
-console.log(`Part 1: ${countIncreases(depths)}`);
 
 // Part 2
 /**
@@ -38,14 +34,13 @@ console.log(`Part 1: ${countIncreases(depths)}`);
 const countSlidingWindowIncreases = (
   depths: Array<number>,
   window = 3
-): number => {
-  return countIncreases(
+): number =>
+  countIncreases(
     depths.map((_, i) =>
       depths.slice(i, i + window).reduce((acc, n) => acc + n, 0)
     )
   );
-};
 
-console.assert(countSlidingWindowIncreases(testDepths) === 5);
+// Outputs
+console.log(`Part 1: ${countIncreases(depths)}`);
 console.log(`Part 2: ${countSlidingWindowIncreases(depths)}`);
-console.log(`Part 2: ${countSlidingWindowIncreases(depths, 1)}`);
