@@ -1,0 +1,22 @@
+{
+  "name": "advent-of-code-2021",
+  "version": "1.0.0",
+  "description": "Solutions to AoC2021 challenges",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Jakub-L/advent-of-code.git"
+  },
+  "author": "Jakub L.",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Jakub-L/advent-of-code/issues"
+  },
+  "homepage": "https://github.com/Jakub-L/advent-of-code#readme",
+  "devDependencies": {
+    "typescript": "^4.5.2"
+  }
+}
