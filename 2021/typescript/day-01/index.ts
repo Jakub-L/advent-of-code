@@ -12,20 +12,25 @@ const depths: Array<number> = readInput('./../../inputs/day-01.txt').map(
 // PARTS 1 & 2
 /**
  * Counts the number of increasing measurements, by considering N-length window of
- * measurements. Sums N consecutive numbers in each window and compares the sums. If
- * window = 1, this is equivalent to comparing each value individually.
+ * measurements. If window = 1, this is equivalent to comparing each value individually.
+ *
+ * Two consecutive windows contain windowSize - 1 of the same numbers. E.g., for windowe = 3:
+ * x1 x2 x3 x4
+ * A  A  A
+ *    B  B  B
+ * Therefore, x2 + x3 + x4 > x1 + x2 + x3 if and only if x4 > x1. This can be extended to
+ * arrays of any length
+ *
  * @param {Array.<number>} depths - Array of depth measurements
  * @param {number} window - The length of the window to consider
- * @returns {number} Number of increasing 3-long measurement windows
+ * @returns {number} Number of increasing N-long measurement windows
  */
 const countIncreases = (depths: Array<number>, window: number): number =>
-  depths
-    .map((_, i) => depths.slice(i, i + window).reduce((acc, n) => acc + n, 0))
-    .reduce(
-      (acc, depth, i, arr) =>
-        i !== arr.length && depth < arr[i + 1] ? acc + 1 : acc,
-      0
-    );
+  depths.reduce(
+    (acc, depth, i, arr) =>
+      i < arr.length - window && depth < arr[i + window] ? acc + 1 : acc,
+    0
+  );
 
 // Outputs
 console.log(`Part 1: ${countIncreases(depths, 1)}`);

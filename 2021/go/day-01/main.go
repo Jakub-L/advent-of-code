@@ -15,20 +15,14 @@ var depths = utils.ParseInts(utils.ReadInput("./../inputs/day-01.txt", "\n"))
 // returns the number of increasing sums (i.e. i < i + 1). For windowSize = 1,
 // this is equivalent to comparing individual numbers
 func countIncreases(depths []int, windowSize int) int {
-	var sums []int
-	for i := range depths {
-		if i <= len(depths)-windowSize {
-			window := depths[i : i+windowSize]
-			sum := 0
-			for _, depth := range window {
-				sum += depth
-			}
-			sums = append(sums, sum)
-		}
-	}
+	// Two consecutive windows contain windowSize - 1 of the same numbers. E.g., for windowSize = 3:
+	// x1 x2 x3 x4
+	// A  A  A
+	//    B  B  B
+	// Therefore, x2 + x3 + x4 > x1 + x2 + x3 if and only if x4 > x1
 	count := 0
-	for i := 0; i < len(sums)-1; i++ {
-		if sums[i] < sums[i+1] {
+	for i, num := range depths[windowSize:] {
+		if num > depths[i] {
 			count++
 		}
 	}
