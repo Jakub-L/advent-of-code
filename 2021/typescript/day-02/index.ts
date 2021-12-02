@@ -8,22 +8,15 @@ import { readInput } from '../utils';
 const instructions = readInput('./../../inputs/day-02.txt');
 
 // UTILS
-/** Class representing a Submarine */
-class Submarine {
+/** Class representing a basic submarine without aim */
+class BasicSubmarine {
   position: number;
   depth: number;
-  aim: number;
-  useAim: boolean;
 
-  /**
-   * Create a submarine. The position defaults to 0, 0
-   * @param {boolean} useAim - Boolean to decide if the aim parameter should be used
-   */
-  constructor(useAim = true) {
+  /** Create a submarine. The position and depth defaults to 0, 0 */
+  constructor() {
     this.position = 0;
     this.depth = 0;
-    this.aim = 0;
-    this.useAim = useAim;
   }
 
   /**
@@ -31,36 +24,60 @@ class Submarine {
    * @param {string} instruction - forward/up/down followed by a number, representing the number of units to move
    */
   move(instruction: string) {
-    const [direction, value] = instruction.split(' ');
-    const intValue: number = parseInt(value, 10);
-    switch (direction) {
+    const [dir, strVal] = instruction.split(' ');
+    const val: number = parseInt(strVal, 10);
+    switch (dir) {
       case 'up':
-        if (this.useAim) this.aim -= intValue;
-        else this.depth -= intValue;
+        this.depth -= val;
         break;
       case 'down':
-        if (this.useAim) this.aim += intValue;
-        else this.depth += intValue;
+        this.depth += val;
         break;
       case 'forward':
-        this.position += intValue;
-        if (this.useAim) this.depth += intValue * this.aim;
-        break;
-      default:
+        this.position += val;
         break;
     }
   }
 }
 
-// PART 1
-const firstSub = new Submarine(false);
-for (let instruction of instructions) {
-  firstSub.move(instruction);
+/** Class representing a submarine with aim functionality */
+class Submarine extends BasicSubmarine {
+  aim: number;
+
+  /** Create a submarine. The position, aim and depth defaults to 0, 0, 0 */
+  constructor() {
+    super();
+    this.aim = 0;
+  }
+
+  /**
+   * Moves the submarine according to the passed instruction
+   * @param {string} instruction - forward/up/down followed by a number, representing the number of units to move
+   */
+  move(instruction: string) {
+    const [dir, strVal] = instruction.split(' ');
+    const val: number = parseInt(strVal, 10);
+    switch (dir) {
+      case 'up':
+        this.aim -= val;
+        break;
+      case 'down':
+        this.aim += val;
+        break;
+      case 'forward':
+        this.position += val;
+        this.depth += val * this.aim;
+        break;
+    }
+  }
 }
 
-// PART 2
+// PART 1 & 2
+const firstSub = new BasicSubmarine();
 const secondSub = new Submarine();
+
 for (let instruction of instructions) {
+  firstSub.move(instruction);
   secondSub.move(instruction);
 }
 
