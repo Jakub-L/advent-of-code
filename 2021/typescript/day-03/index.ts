@@ -8,22 +8,6 @@ import { readInput } from '../utils';
 const diagnostics = readInput('./../../inputs/day-03.txt').map((num) =>
   num.split('').map((d) => parseInt(d, 2))
 );
-const test = [
-  '00100',
-  '11110',
-  '10110',
-  '10111',
-  '10101',
-  '01111',
-  '00111',
-  '11100',
-  '10000',
-  '11001',
-  '00010',
-  '01010'
-].map((num) => num.split('').map((d) => parseInt(d, 2)));
-
-// UTILS
 
 // PART 1
 /**
@@ -44,15 +28,46 @@ const findGamma = (diag: number[][]): string =>
 
 /**
  * Calculates the power consumption of the submarine
- * @param {string} gamma - Binary number representing most common digits in diagnostics
+ * @param {Array.<Array.<number>>} diag - Array of diagnostic binary diag, split into digits
  * @returns {number} Power consumption of the submarine
  */
-const findPowerConsumption = (gamma: string): number =>
-  parseInt(gamma, 2) *
-  (parseInt(gamma, 2) ^ parseInt('1'.repeat(gamma.length), 2));
+const findPowerConsumption = (diag: number[][]): number => {
+  const gamma = findGamma(diag);
+  return (
+    parseInt(gamma, 2) *
+    (parseInt(gamma, 2) ^ parseInt('1'.repeat(gamma.length), 2))
+  );
+};
 
 // PART 2
+/**
+ * Compares an array of binary numbers bit-by-bit against the most common bit for that array in
+ * a given position. Filters out those that don't match the most common bit and recalculates the
+ * most common bit again.
+ * @param {Array.<Array.<number>>} diag - Array of diagnostic binary diag, split into digits
+ * @param {boolean} leastCommon - Whether the comparison should be made against the least-common
+ * @returns {string} A string representing the bits of the diagnostic matching the bit criterion
+ */
+const findByBitCriteria = (diag: number[][], leastCommon: boolean): string => {
+  for (let i = 0; i < diag[0].length; i += 1) {
+    const gamma = findGamma(diag);
+    // X ^ 1 flips the X bit for comparing against the least common bit
+    diag = diag.filter((number) => number[i] === (+gamma[i] ^ +leastCommon));
+    if (diag.length === 1) return diag[0].join('');
+  }
+  return '';
+};
+
+/**
+ * Finds the life support rating by finding the Oxygen rating (comparing against most common bit)
+ * and the CO2 rating (comparing against least common bit) and finding the product of the two.
+ * @param {Array.<Array.<number>>} diag - Array of diagnostic binary diag, split into digits
+ * @returns {number} The product of the CO2 and Oxygen ratings
+ */
+const findLifeSupportRating = (diag: number[][]): number =>
+  parseInt(findByBitCriteria(diag, false), 2) *
+  parseInt(findByBitCriteria(diag, true), 2);
 
 // Outputs
-const gamma = findGamma(diagnostics);
-console.log(findPowerConsumption(gamma));
+console.log(`Part 1: ${findPowerConsumption(diagnostics)}`);
+console.log(`Part 2: ${findLifeSupportRating(diagnostics)}`);
