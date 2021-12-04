@@ -69,7 +69,7 @@ class BingoBoard {
   /**
    *
    * @param {number} num - The number to mark off
-   * @returns {number|null} Score if the board won, else 0
+   * @returns {number} Score if the board won, else 0
    */
   markNumber(num: number): number {
     const tile = this.lookup[num];
@@ -91,6 +91,7 @@ class BingoBoard {
   }
 }
 
+// PART 1
 /**
  * Plays bingo until a board wins or until the drawn numbers run out
  * @param {Array.<number>} draw - The numbers being drawn, in order
@@ -107,13 +108,29 @@ const playBingo = (draw: Array<number>, boards: Array<BingoBoard>): number => {
   return 0;
 };
 
-// PART 1
-const bingoBoards = boards.map((board) => new BingoBoard(board));
-console.log(playBingo(draw, bingoBoards));
-
 // PART 2
+/**
+ * Finds the winning score of the last bingo card to win.
+ * @param {Array.<number>} draw - The numbers being drawn, in order
+ * @param {Array.<BingoBoard>} boards - The bingo boards played
+ * @returns {number} The score of the last bingo card to win, 0 if no board wins
+ */
+const findLastWinnersScore = (
+  draw: Array<number>,
+  boards: Array<BingoBoard>
+): number => {
+  for (let num of draw) {
+    if (boards.length > 1) {
+      boards = boards.filter((board) => !board.markNumber(num));
+    } else {
+      const score = boards[0].markNumber(num);
+      if (score > 0) return score;
+    }
+  }
+  return 0;
+};
 
 // Outputs
-// console.log(draw);
-// console.log(`Part 1: `);
-// console.log(`Part 2: `);
+const bingoBoards = boards.map((board) => new BingoBoard(board));
+console.log(`Part 1: ${playBingo(draw, bingoBoards)}`);
+console.log(`Part 2: ${findLastWinnersScore(draw, bingoBoards)}`);
