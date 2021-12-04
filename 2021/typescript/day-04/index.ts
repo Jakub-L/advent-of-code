@@ -67,24 +67,6 @@ class BingoBoard {
   }
 
   /**
-   * Check both diagonals for bingo
-   * @returns {boolean} True if either of the two diagonals are marked
-   */
-  checkDiagonals(): boolean {
-    const diagonals = [
-      Array(this.board.length)
-        .fill(null)
-        .map((_, i) => [i, i]),
-      Array(this.board.length)
-        .fill(null)
-        .map((_, i, arr) => [i, arr.length - 1 - i])
-    ];
-    return diagonals.some((diagonal) =>
-      diagonal.every(([i, j]) => this.board[i][j].marked)
-    );
-  }
-
-  /**
    *
    * @param {number} num - The number to mark off
    * @returns {number|null} Score if the board won, else 0
