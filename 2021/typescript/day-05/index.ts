@@ -19,22 +19,26 @@ const test = [
 ].map((line) =>
   line.split(' -> ').map((coords) => coords.split(',').map(Number))
 );
+const lines = readInput('./../../inputs/day-05.txt').map((line) =>
+  line.split(' -> ').map((coords) => coords.split(',').map(Number))
+);
 
-
-// UTILS
-
-// PART 1
-const countOverlaps = (lines: Array<Array<Array<number>>>): number => {
+// PART 1 & 2
+const countOverlaps = (
+  lines: Array<Array<Array<number>>>,
+  countDiagonals: boolean
+): number => {
   const points: { [index: string]: number } = {};
   for (let line of lines) {
-    const [[x0, y0], [x1, y1]] = line;
-    if (x0 === x1 || y0 === y1) {
-      for (let x = Math.min(x0, x1); x <= Math.max(x0, x1); x++) {
-        for (let y = Math.min(y0, y1); y <= Math.max(y0, y1); y++) {
-          points[`${x},${y}`] = 1 + (points[`${x},${y}`] ? 1 : 0);
-        }
-      }
+    let [[x0, y0], [x1, y1]] = line;
+    const [dx, dy] = [Math.sign(x1 - x0), Math.sign(y1 - y0)];
+    if (!countDiagonals && dx !== 0 && dy !== 0) continue;
+    while (x0 !== x1 || y0 !== y1) {
+      points[`${x0},${y0}`] = 1 + (points[`${x0},${y0}`] || 0);
+      if (x0 !== x1) x0 = x0 + dx;
+      if (y0 !== y1) y0 = y0 + dy;
     }
+    points[`${x0},${y0}`] = 1 + (points[`${x0},${y0}`] || 0);
   }
   return Object.values(points).reduce(
     (acc, overlaps) => acc + +(overlaps > 1),
@@ -42,7 +46,6 @@ const countOverlaps = (lines: Array<Array<Array<number>>>): number => {
   );
 };
 
-// PART 2
-
 // OUTPUTS
-console.log(`Part 1: ${countOverlaps(test)}`);
+console.log(`Part 1: ${countOverlaps(lines, false)}`);
+console.log(`Part 2: ${countOverlaps(lines, true)}`);
