@@ -4,34 +4,29 @@
  */
 import { readInput } from '../utils';
 
-console.time('a');
-
 // INPUTS
 const fish = readInput('./../../inputs/day-06.txt', ',').map(Number);
-const test = [3, 4, 3, 1, 2];
 
-// UTILS
-const dayCounts = (days: number): Array<number> => {
-  const counts: number[] = [1];
-  let fish: number[] = [0];
+// PART 1 & 2
+/**
+ * Count the number of exponentially dividing lanternfish 
+ * @param {Array.<number>} startFish - The array of starting fish ages
+ * @param {number} days - Number of days after which the count will be returned
+ * @returns {number} Count of fish after specified number of days
+ */
+const countFish = (startFish: number[], days: number): number => {
+  const fish = startFish.reduce<number[]>((acc, age) => {
+    acc[age] += 1;
+    return acc;
+  }, Array(9).fill(0));
   for (let i = 0; i < days; i++) {
-    fish = fish.reduce<number[]>((acc, f) => {
-      if (f === 0) acc.push(6, 8);
-      else acc.push(f - 1);
-      return acc;
-    }, []);
-    counts.push(fish.length);
+    const zeroCount = fish.shift() || 0;
+    fish[6] += zeroCount;
+    fish.push(zeroCount);
   }
-  return counts;
-};
-
-// PART 1
-const totalCount = (startFish: number[], days: number) => {
-  const zeroTimer = dayCounts(days);
-  return startFish.reduce((acc, timer) => acc + zeroTimer[days - timer], 0);
+  return fish.reduce((acc, count) => acc + count, 0);
 };
 
 // OUTPUTS
-console.log(`Part 1: ${totalCount(fish, 80)}`);
-// console.log(`Part 2: ${totalCount(test, 256)}`);
-console.timeEnd('a');
+console.log(`Part 1: ${countFish(fish, 80)}`);
+console.log(`Part 2: ${countFish(fish, 256)}`);
