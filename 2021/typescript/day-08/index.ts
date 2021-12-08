@@ -4,6 +4,18 @@
  */
 import { readInput } from '../utils';
 
+// TYPES
+/**
+ * An array of letters representing a 7-segment display
+ * @typedef {Array.<string>} Patterns
+ */
+type Patterns = Array<string>;
+/**
+ * An array of patterns representing the known pattern and the output to be decoded
+ * @typedef {Array.<Patterns>} Signal
+ */
+type Signal = Array<Patterns>;
+
 // INPUTS
 const signals = readInput('./../../inputs/day-08.txt').map((row) =>
   row.split(' | ').map((entry) => entry.split(' '))
@@ -21,12 +33,10 @@ const countOverlap = (comparer: string, compared: string): number =>
 
 /**
  * Decodes the seven-segment display
- * @param {Array.<string>} patterns - Array of strings representing the lit-up segments of the display
+ * @param {Patters} patterns - Array of strings representing the lit-up segments of the display
  * @returns {Object.<string, number>} A mapping of the patterns (each sorted alphabetically) to the digits they represent
  */
-const decodePatterns = (
-  patterns: Array<string>
-): { [index: string]: number } => {
+const decodePatterns = (patterns: Patterns): { [index: string]: number } => {
   // After sorting patterns by length, those of unique length can be extracted
   // 1 is the only digit that uses 2 segments and there is no digit that uses fewer
   // 7 is the only digit that uses 3 segments
@@ -68,11 +78,11 @@ const decodePatterns = (
 
 /**
  * Decodes the passed signal and returns the decoded output
- * @param {Array.<Array.<string>>} signal - An array of patterns (first element) and outputs (second element), each
+ * @param {Signal} signal - An array of patterns (first element) and outputs (second element), each
  * of which are arrays of string seven-segment patterns
  * @returns {Array.<number>} Array of decoded outputs as numbers
  */
-const decodeSignal = (signal: Array<Array<string>>): Array<number> => {
+const decodeSignal = (signal: Signal): Array<number> => {
   const [patterns, output] = signal;
   const decodings: { [index: string]: number } = decodePatterns(patterns);
   return output.map((digit) => decodings[digit.split('').sort().join('')]);
@@ -81,14 +91,11 @@ const decodeSignal = (signal: Array<Array<string>>): Array<number> => {
 // PART 1
 /**
  * Decodes signal outputs and counts how many times given digits appear in them
- * @param {Array.<Array.<Array.<string>>>} signals - An array of signals, each containing a pattern and output
+ * @param {Array.<Signal>} signals - An array of signals, each containing a pattern and output
  * @param {Array.<number>} digits - Digits to count within the outputs
  * @returns {number} Total count of occurences of any of the digits in the decoded outputs
  */
-const countDigits = (
-  signals: Array<Array<Array<string>>>,
-  digits: Array<number>
-): number =>
+const countDigits = (signals: Array<Signal>, digits: Array<number>): number =>
   signals.reduce(
     (sum, signal) =>
       sum +
@@ -99,10 +106,10 @@ const countDigits = (
 // PART 2
 /**
  * Decodes signal outputs and sums them
- * @param {Array.<Array.<Array.<string>>>} signals - An array of signals, each containing a pattern and output
+ * @param {Array.<Signal>} signals - An array of signals, each containing a pattern and output
  * @returns {number} The total sum of all the outputs
  */
-const sumOutputs = (signals: Array<Array<Array<string>>>): number =>
+const sumOutputs = (signals: Array<Signal>): number =>
   signals.reduce(
     (sum, signal) => sum + Number(decodeSignal(signal).join('')),
     0
