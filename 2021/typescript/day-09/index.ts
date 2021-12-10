@@ -54,7 +54,42 @@ const sumRisk = (minima: number[]): number =>
   minima.reduce((acc, minimum) => acc + minimum + 1, 0);
 
 // PART 2
+const identifyBasins = (depths: number[][]) => {
+  const neighbours = [
+    [-1, 0],
+    [0, -1],
+    [0, 1],
+    [1, 0],
+  ];
+  const basinMap: Array<Array<null | number>> = depths.map((row) =>
+    Array(row.length).fill(null)
+  );
+  const basins = [0];
+
+  for (let i = 0; i < depths.length; i++) {
+    for (let j = 0; j < depths[i].length; j++) {
+      if (depths[i][j] === 9) continue;
+      let basin = basinMap[i][j];
+      if (!basin) {
+        basin = basins.length;
+        basins.push(1);
+        basinMap[i][j] = basin;
+      }
+      neighbours.forEach(([di, dj]) => {
+        if (
+          basinMap[i + di]?.[j + dj] !== undefined &&
+          basinMap[i + di][j + dj] === null &&
+          depths[i + di][j + dj] !== 9
+        ) {
+          basinMap[i + di][j + dj] = basin;
+        }
+      });
+    }
+  }
+  console.log(basinMap.join('\n'), '\n');
+};
 
 // OUTPUTS
 console.log(`Part 1: ${sumRisk(findMinima(depths))}`);
+identifyBasins(test);
 // console.log(`Part 2: ${}`);
