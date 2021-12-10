@@ -4,21 +4,10 @@
  */
 import { readInput } from '../utils';
 
-// TYPES
-
 // INPUTS
 const depths = readInput('./../../inputs/day-09.txt').map((row) =>
   row.split('').map(Number)
 );
-const test = [
-  '2199943210',
-  '3987894921',
-  '9856789892',
-  '8767896789',
-  '9899965678',
-].map((row) => row.split('').map(Number));
-
-// UTILS
 
 // PART 1
 /**
@@ -35,7 +24,7 @@ const findMinima = (depths: number[][]): number[] =>
             [i - 1, j],
             [i, j - 1],
             [i, j + 1],
-            [i + 1, j],
+            [i + 1, j]
           ].every(
             ([row, col]) =>
               depths[row]?.[col] === undefined || num < depths[row][col]
@@ -54,33 +43,40 @@ const sumRisk = (minima: number[]): number =>
   minima.reduce((acc, minimum) => acc + minimum + 1, 0);
 
 // PART 2
-const identifyBasins = (depths: number[][]) => {
-  const neighbours = [
-    [-1, 0],
-    [0, -1],
-    [0, 1],
-    [1, 0],
-  ];
+/**
+ * Finds the basins in a depth map and returns their sizes, from largest to smallest
+ * @param {number[][]} depths - 2D map of sea bed depths as digits from 0 to 9
+ * @returns {number[]} Array of basin sizes, sorted from largest to smallest
+ */
+const findBasinSizes = (depths: number[][]): number[] => {
   const basinMap: Array<Array<null | number>> = depths.map((row) =>
     Array(row.length).fill(null)
   );
   const basins = [0];
-  const markNeighbours = (i: number, j: number, basin: number) => {
-    for (let n = 0; n < neighbours.length; n++) {
-      const [di, dj] = neighbours[n];
+
+  /**
+   *
+   * @param {number} i - Row index of the target
+   * @param {number} j - Column index of the target
+   * @param {number} val - Value
+   */
+  const markNeighbours = (i: number, j: number, val: number) => {
+    [
+      [-1, 0],
+      [0, -1],
+      [0, 1],
+      [1, 0]
+    ].forEach(([di, dj]) => {
       if (
-        depths[i + di]?.[j + dj] === undefined ||
-        basinMap[i + di][j + dj] ||
-        depths[i + di][j + dj] === 9
-      )
-        continue;
-      else {
-        basins[basin] += 1;
-        basinMap[i + di][j + dj] = basin;
-        markNeighbours(i + di, j + dj, basin);
+        depths[i + di]?.[j + dj] !== undefined &&
+        depths[i + di][j + dj] !== 9 &&
+        basinMap[i + di][j + dj] === null
+      ) {
+        basins[val] += 1;
+        basinMap[i + di][j + dj] = val;
+        markNeighbours(i + di, j + dj, val);
       }
-    }
-    return;
+    });
   };
 
   for (let i = 0; i < depths.length; i++) {
@@ -95,10 +91,17 @@ const identifyBasins = (depths: number[][]) => {
       markNeighbours(i, j, basin);
     }
   }
-  return basins;
+  return basins.sort((a, b) => b - a);
 };
+
+/**
+ * Finds the product of three largest basin sizes
+ * @param {number[]} basins - Array of basin sizes, sorted from largest to smallest
+ * @returns {number} The product
+ */
+const threeLargestBasins = (basins: number[]): number =>
+  basins.slice(0, 3).reduce((acc, n) => acc * n, 1);
 
 // OUTPUTS
 console.log(`Part 1: ${sumRisk(findMinima(depths))}`);
-const p2 = identifyBasins(depths).sort((a, b) => b - a);
-console.log(`Part 2: ${p2.slice(0, 3).reduce((acc, n) => acc * n, 1)}`);
+console.log(`Part 2: ${threeLargestBasins(findBasinSizes(depths))}`);
