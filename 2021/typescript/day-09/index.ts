@@ -65,6 +65,23 @@ const identifyBasins = (depths: number[][]) => {
     Array(row.length).fill(null)
   );
   const basins = [0];
+  const markNeighbours = (i: number, j: number, basin: number) => {
+    for (let n = 0; n < neighbours.length; n++) {
+      const [di, dj] = neighbours[n];
+      if (
+        depths[i + di]?.[j + dj] === undefined ||
+        basinMap[i + di][j + dj] ||
+        depths[i + di][j + dj] === 9
+      )
+        continue;
+      else {
+        basins[basin] += 1;
+        basinMap[i + di][j + dj] = basin;
+        markNeighbours(i + di, j + dj, basin);
+      }
+    }
+    return;
+  };
 
   for (let i = 0; i < depths.length; i++) {
     for (let j = 0; j < depths[i].length; j++) {
@@ -75,21 +92,13 @@ const identifyBasins = (depths: number[][]) => {
         basins.push(1);
         basinMap[i][j] = basin;
       }
-      neighbours.forEach(([di, dj]) => {
-        if (
-          basinMap[i + di]?.[j + dj] !== undefined &&
-          basinMap[i + di][j + dj] === null &&
-          depths[i + di][j + dj] !== 9
-        ) {
-          basinMap[i + di][j + dj] = basin;
-        }
-      });
+      markNeighbours(i, j, basin);
     }
   }
-  console.log(basinMap.join('\n'), '\n');
+  return basins;
 };
 
 // OUTPUTS
 console.log(`Part 1: ${sumRisk(findMinima(depths))}`);
-identifyBasins(test);
-// console.log(`Part 2: ${}`);
+const p2 = identifyBasins(depths).sort((a, b) => b - a);
+console.log(`Part 2: ${p2.slice(0, 3).reduce((acc, n) => acc * n, 1)}`);
