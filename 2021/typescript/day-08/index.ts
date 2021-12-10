@@ -116,6 +116,5 @@ const sumOutputs = (signals: Array<Signal>): number =>
   );
 
 // OUTPUTS
-console.log();
 console.log(`Part 1: ${countDigits(signals, [1, 4, 7, 8])}`);
 console.log(`Part 2: ${sumOutputs(signals)}`);
