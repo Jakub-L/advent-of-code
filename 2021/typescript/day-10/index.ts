@@ -1,6 +1,6 @@
 /**
- * Solution to Day 9 challenge of Advent of Code 2021
- * https://adventofcode.com/2021/day/9
+ * Solution to Day 10 challenge of Advent of Code 2021
+ * https://adventofcode.com/2021/day/10
  */
 import { readInput } from '../utils';
 
