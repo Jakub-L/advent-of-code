@@ -9,31 +9,41 @@ const caves = readInput('./../../inputs/day-12.txt').map((pair) =>
   pair.split('-')
 );
 
-const test = ['start-A', 'start-b', 'A-c', 'A-b', 'b-d', 'A-end', 'b-end'].map(
-  (pair) => pair.split('-')
-);
-
 // UTILS
+/** Class representing a single cave */
 class Cave {
   id: string;
   connections: Cave[];
   isLarge: boolean;
 
+  /**
+   * Generates a new cave
+   * @param {string} id - ID of the cave
+   */
   constructor(id: string) {
     this.id = id;
     this.connections = [];
     this.isLarge = /[A-Z]+/.test(id);
   }
 
+  /**
+   * Joins two caves together with a traversable, bidirecitonal edge
+   * @param {Cave} target - The cave to which connection is created
+   */
   join(target: Cave) {
     this.connections.push(target);
     target.connections.push(this);
   }
 }
 
-class System {
+/** Class representing a system of interconnected caves */
+class CaveSystem {
   caves: { [index: string]: Cave };
 
+  /**
+   * Create a new cave system
+   * @param {string[][]} pairs - Array of cave ID pairs, representing their connections
+   */
   constructor(pairs: string[][]) {
     this.caves = {};
     for (let pair of pairs) {
@@ -43,25 +53,28 @@ class System {
     }
   }
 
-  countPaths(visitTwice: boolean, start?: Cave, visited?: string[]): number {
-    visited = visited || ['start'];
-    start = start || this.caves['start'];
+  /**
+   * Counts the number of ways to traverse the system starting at `node` and finishing at
+   * a cave with ID "end"
+   * @param {boolean} visitTwice - Whether small caves can be visited twice
+   * @param {Cave} [node=this.caves['start']] - The node at which to start the search
+   * @param {string[]} [visited=['start']] - Array of IDs of visited small caves
+   * @returns {number} The number of distinct routes
+   */
+  countPaths(
+    visitTwice: boolean,
+    node = this.caves['start'],
+    visited = ['start']
+  ): number {
     let routes = 0;
-    if (start.id === 'end') return 1;
-    for (let connection of start.connections) {
-      if (connection.isLarge)
-        routes += this.countPaths(visitTwice, connection, visited);
+    if (node.id === 'end') return 1;
+    for (let cave of node.connections) {
+      if (cave.isLarge) routes += this.countPaths(visitTwice, cave, visited);
       else {
-        if (!visited.includes(connection.id)) {
-          routes += this.countPaths(visitTwice, connection, [
-            ...visited,
-            connection.id
-          ]);
-        } else if (visitTwice && !['start', 'end'].includes(connection.id)) {
-          routes += this.countPaths(false, connection, [
-            ...visited,
-            connection.id
-          ]);
+        if (!visited.includes(cave.id)) {
+          routes += this.countPaths(visitTwice, cave, [...visited, cave.id]);
+        } else if (visitTwice && !['start', 'end'].includes(cave.id)) {
+          routes += this.countPaths(false, cave, visited);
         }
       }
     }
@@ -69,14 +82,9 @@ class System {
   }
 }
 
-// PART 1
-
-// PART 2
+// PART 1 & 2
+const network = new CaveSystem(caves);
 
 // OUTPUTS
-const a = new System(caves);
-console.log(a.countPaths(false));
-console.log(a.countPaths(true));
-
-// console.log(`Part 1: ${}`);
-// console.log(`Part 2: ${}`);
+console.log(`Part 1: ${network.countPaths(false)}`);
+console.log(`Part 2: ${network.countPaths(true)}`);
