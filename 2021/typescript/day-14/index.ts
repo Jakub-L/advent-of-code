@@ -4,64 +4,76 @@
  */
 import { readInput } from '../utils';
 
-const test = `NNCB
-
-CH -> B
-HH -> N
-CB -> H
-NH -> C
-HB -> C
-HC -> B
-HN -> C
-NN -> C
-BH -> H
-NC -> B
-NB -> B
-BN -> B
-BB -> N
-BC -> B
-CC -> N
-CN -> C`
-  .split('\n\n')
-  .map((e) => e.split('\n'));
-
 // INPUTS
 const [template, rawInstr] = readInput('./../../inputs/day-14.txt', '\n\n');
 const instructions = rawInstr.split('\n');
 
 // UTILS
 class Polymer {
-  chain: string;
-  rules: { [index: string]: string };
+  /** Count of each of the polymer's pairs */
+  pairs: { [index: string]: number };
+  /** Count of individual characters in a polymer */
+  chars: { [index: string]: number };
+  /**
+   * Set of rules indexed by polymer pair, containing the character to be inserted (`insert`)
+   * and the two pairs this in turn generates (`targets`)
+   */
+  rules: { [index: string]: { insert: string; targets: string[] } };
 
+  /**
+   * Creates a new polymer
+   * @param {string} template - Starting polymer template
+   * @param {string[]} rules - List of insertions as strings in the form `PAIR -> INSERT`
+   */
   constructor(template: string, rules: string[]) {
-    this.chain = template;
-    this.rules = rules.reduce<{ [index: string]: string }>((dict, rule) => {
-      const [pattern, insert] = rule.split(' -> ');
-      dict[pattern] = `${pattern[0]}${insert}`;
-      return dict;
-    }, {});
-  }
-
-  step() {
-    let newChain = '';
-    for (let i = 0; i < this.chain.length - 1; i += 1) {
-      const pair = this.chain.slice(i, i + 2);
-      newChain = `${newChain}${this.rules[pair] || pair}`;
-    }
-    newChain = `${newChain}${this.chain[this.chain.length - 1]}`;
-    this.chain = newChain;
-  }
-
-  get characterCounts(): { [index: string]: number } {
-    return this.chain
+    this.pairs = {};
+    this.rules = {};
+    this.chars = template
       .split('')
       .reduce<{ [index: string]: number }>((acc, c) => {
-        acc[c] = acc[c] ? acc[c] + 1 : 1;
+        acc[c] = acc[c] + 1 || 1;
         return acc;
       }, {});
+
+    for (let i = 0; i < template.length - 1; i++) {
+      const pair = template.slice(i, i + 2);
+      this.pairs[pair] = this.pairs[pair] + 1 || 1;
+    }
+
+    for (let rule of rules) {
+      const [pair, insert] = rule.split(' -> ');
+      this.rules[pair] = {
+        insert,
+        targets: [`${pair[0]}${insert}`, `${insert}${pair[1]}`]
+      };
+    }
+  }
+
+  /**
+   * Advances the polymerisation by one step, according to the rules
+   */
+  step() {
+    const newPairs: { [index: string]: number } = {};
+    for (let [pair, count] of Object.entries(this.pairs)) {
+      const { insert, targets } = this.rules[pair];
+      for (let target of targets) {
+        newPairs[target] = newPairs[target] + count || count;
+      }
+      this.chars[insert] = this.chars[insert] + count || count;
+    }
+    this.pairs = newPairs;
   }
 }
+
+/**
+ * Finds the difference between the counts of the most common and least common polymer character
+ * @param {Polymer} polymer - The polymer to inspect
+ * @returns {number} Difference between the counts
+ */
+const countDifference = (polymer: Polymer): number => {
+  const sortedCounts = Object.values(polymer.chars).sort((a, b) => a - b);
+  return sortedCounts[sortedCounts.length - 1] - sortedCounts[0];
+};
 
 // PART 1
 const firstPolymer = new Polymer(template, instructions);
@@ -72,7 +84,5 @@ const secondPolymer = new Polymer(template, instructions);
 for (let i = 0; i < 40; i++) secondPolymer.step();
 
 // OUTPUTS
-// const p = new Polymer(test[0][0], test[1]);
-console.log(secondPolymer.characterCounts);
-// console.log(`Part 1: ${}`);
-// console.log(`Part 2: ${}`);
+console.log(`Part 1: ${countDifference(firstPolymer)}`);
+console.log(`Part 2: ${countDifference(secondPolymer)}`);
