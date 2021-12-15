@@ -31,7 +31,6 @@ export const gridShortestPath = (
   const queue = [{ x: x0, y: y0, dist: 0 }];
 
   while (queue.length) {
-    console.log(queue);
     const { x = 0, y = 0, dist = 0 } = queue.shift() || {};
     // If we made it to the end, return distance to it
     if (x === xt && y === yt) return dist;
