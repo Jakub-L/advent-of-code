@@ -38,9 +38,9 @@ export const gridShortestPath = (
     for (let [dx, dy] of neighbours) {
       const [xx, yy] = [x + dx, y + dy];
       // If point is outside grid bounds or has been visited, skip it
-      if (!grid[yy]?.[xx] || visited.has(`${yy},${xx}`)) continue;
+      if (grid[yy]?.[xx] === undefined || visited.has(`${xx},${yy}`)) continue;
       // Otherwise mark the point as visited and add it to the queue of vertices to check
-      visited.add(`${yy},${xx}`);
+      visited.add(`${xx},${yy}`);
       queue.push({ x: xx, y: yy, dist: dist + grid[yy][xx] });
     }
     // Sort the queue to find the shortest-distance vertex to inspect next
