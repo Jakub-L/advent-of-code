@@ -27,48 +27,43 @@ const hexToBin = (hex: string): string =>
 const binToDec = (bin: string) => parseInt(bin, 2);
 
 const parsePacket = (bin: string): any => {
-  const [ver, type] = [binToDec(bin.slice(0, 3)), binToDec(bin.slice(3, 6))];
-  const packet: { [index: string]: any } = { ver, type };
+  const bits = bin.split('');
+  const ver = binToDec(bits.splice(0, 3).join(''));
+  const type = binToDec(bits.splice(0, 3).join(''));
   if (type === 4) {
-    const { val, rest } = parseLiteral(bin.slice(6));
-    packet.content = val;
-    if (binToDec(rest) === 0) {
-      return [packet, ''];
-    } else {
-      return [packet, rest];
-    }
+    let literal = '';
+    do {
+      const 
+      [prefix, bit] = [bin.slice(0, 1), bin.slice(1, 5)];
+      [bin, literal] = [bin.slice(5), `${literal}${bit}`];
+    } while (prefix === '1');
+    return { packet: { ver, type, val: binToDec(literal) }, rest: bin };
   } else {
     const lengthID = bin.slice(6, 7);
+    const subPackets = [];
     if (lengthID === '0') {
       const subPacketLength = binToDec(bin.slice(7, 22));
-      let [subPacket, rest] = parsePacket(bin.slice(22, 22 + subPacketLength));
-      packet.content = [subPacket];
-      while (rest.length) {
-        [subPacket, rest] = parsePacket(rest);
-        packet.content.push(subPacket);
+      let content = bin.slice(22, 22 + subPacketLength);
+      while (content.length) {
+        const { packet, rest } = parsePacket(content);
+        subPackets.push(packet);
+        content = rest;
       }
-      return [packet, ''];
+      return {
+        packet: { ver, type, subPackets },
+        rest: bin.slice(22 + subPacketLength),
+      };
     } else {
       const subPacketCount = binToDec(bin.slice(7, 18));
-      let [subPacket, rest] = parsePacket(bin.slice(18));
-      packet.content = [subPacket];
-      while (packet.content.length < subPacketCount) {
-        [subPacket, rest] = parsePacket(rest);
-        packet.content.push(subPacket);
+      let content = bin.slice(18);
+      for (let i = 0; i < subPacketCount; i++) {
+        const { packet, rest } = parsePacket(content);
+        subPackets.push(packet);
+        content = rest;
       }
-      return [packet, ''];
+      return { packet: { ver, type, subPackets }, rest: content };
     }
   }
-};
-
-const parseLiteral = (bin: string) => {
-  let num = '';
-  let prefix, bit;
-  do {
-    [prefix, bit] = [bin.slice(0, 1), bin.slice(1, 5)];
-    [bin, num] = [bin.slice(5), `${num}${bit}`];
-  } while (bin.length >= 4 && prefix === '1');
-  return { val: binToDec(num), rest: bin };
 };
 
 // PART 1
@@ -77,14 +72,9 @@ const parseLiteral = (bin: string) => {
 
 // OUTPUTS
 
-// console.log(parsePacket('110100101111111000101000'));
-// console.dir(
-//   parsePacket('00111000000000000110111101000101001010010001001000000000')
-// );
-// '100010100000000001001010100000000001101010000000000000101111010001111000';
 console.log(
   JSON.stringify(
-    parsePacket(hexToBin('C0015000016115A2E0802F182340'))[0],
+    parsePacket(hexToBin('620080001611562C8802118E34')),
     undefined,
     4
   )
