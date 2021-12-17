@@ -106,7 +106,13 @@ const versionSum = (root: Packet): number => {
 const root = parsePacket(hexToBin(input)).packet;
 
 // PART 2
-const calculate = ({ type, val = 0, subPackets = [] }: Packet): number => {
+/**
+ * Evaluates the expression contained within the packet structure
+ * @param {Packet} root - The packet to evaluate
+ * @returns {number} The numeric solution of the packet's content
+ */
+const calculate = (root: Packet): number => {
+  const { type, val = 0, subPackets = [] } = root;
   if (type === 4) return val;
   else if (type === 0) {
     return subPackets.reduce((acc, sub) => acc + calculate(sub), 0);
