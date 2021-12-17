@@ -3,10 +3,14 @@ import { readFileSync } from 'fs';
 /**
  * Processes an input file into an array of strings
  * @param {string} path - Filepath of the input file to process
- * @param {string} [delimiter=\n] - Delimiter used to split file into array
- * @returns {Array.<string>} Input file split by delimiter
+ * @param {string | null} [delimiter=\n] - Delimiter used to split file into array, if null, doesn't split
+ * @returns {Array.<string> | string} Input file split by delimiter, if present
  */
-export const readInput = (path: string, delimiter = '\n'): Array<string> => {
+export const readInput = (
+  path: string,
+  delimiter: string | null = '\n'
+): Array<string> | string => {
+  if (delimiter === null) return readFileSync(path, 'utf-8');
   return readFileSync(path, 'utf-8').split(delimiter);
 };
 

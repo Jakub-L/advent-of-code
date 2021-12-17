@@ -14,7 +14,7 @@ type Packet = {
 };
 
 // INPUTS
-const input = readInput('./../../inputs/day-16.txt').join('');
+const input = readInput('./../../inputs/day-16.txt', null);
 
 // UTILS
 /**
