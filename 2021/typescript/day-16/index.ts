@@ -14,7 +14,7 @@ type Packet = {
 };
 
 // INPUTS
-const input = readInput('./../../inputs/day-16.txt');
+const input = readInput('./../../inputs/day-16.txt').join('');
 
 // UTILS
 /**
@@ -89,9 +89,42 @@ const parsePacket = (binary: string): { packet: Packet; rest: string } => {
 };
 
 // PART 1
+/**
+ * Finds the total sum of all versions in all subpackets
+ * @param {Packet} root - Packet to start at
+ * @returns {number} The sum of the root's and all subpacket's versions
+ */
+const versionSum = (root: Packet): number => {
+  if (root.subPackets) {
+    return (
+      root.ver +
+      root.subPackets.reduce((acc, subPacket) => acc + versionSum(subPacket), 0)
+    );
+  } else return root.ver;
+};
+
+const root = parsePacket(hexToBin(input)).packet;
 
 // PART 2
+const calculate = ({ type, val = 0, subPackets = [] }: Packet): number => {
+  if (type === 4) return val;
+  else if (type === 0) {
+    return subPackets.reduce((acc, sub) => acc + calculate(sub), 0);
+  } else if (type === 1) {
+    return subPackets.reduce((acc, sub) => acc * calculate(sub), 1);
+  } else if (type === 2) {
+    return Math.min(...subPackets.map((sub) => calculate(sub)));
+  } else if (type === 3) {
+    return Math.max(...subPackets.map((sub) => calculate(sub)));
+  } else if (type === 5) {
+    return Number(calculate(subPackets[0]) > calculate(subPackets[1]));
+  } else if (type === 6) {
+    return Number(calculate(subPackets[0]) < calculate(subPackets[1]));
+  } else {
+    return Number(calculate(subPackets[0]) === calculate(subPackets[1]));
+  }
+};
 
 // OUTPUTS
-// console.log(`Part 1: ${}`);
-// console.log(`Part 2: ${}`);
+console.log(`Part 1: ${versionSum(root)}`);
+console.log(`Part 2: ${calculate(root)}`);
