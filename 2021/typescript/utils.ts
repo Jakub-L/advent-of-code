@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs';
 
 /**
- * Processes an input file into an array of strings
+ * Processes an input file into a string or array of strings
  * @param {string} path - Filepath of the input file to process
  * @param {string | null} [delimiter=\n] - Delimiter used to split file into array, if null, doesn't split
  * @returns {Array.<string> | string} Input file split by delimiter, if present
