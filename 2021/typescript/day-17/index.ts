@@ -4,19 +4,13 @@
  */
 import { readInput } from '../utils';
 
-// TYPES
-
 // INPUTS
-const rawInput = readInput('./../../inputs/day-17.txt', null) as string;
+const rawInput = readInput('./../../inputs/day-17.txt').join('');
 const coordMatch = /x=(?<x0>-?\d+)..(?<x1>-?\d+).*=(?<y0>-?\d+)..(?<y1>-?\d+)/;
 const matches = rawInput.match(coordMatch)?.groups || {};
 const { x0, x1, y0, y1 } = Object.entries(matches).reduce<{
   [index: string]: number;
 }>((acc, [key, val]) => ({ ...acc, [key]: Number(val) }), {});
-
-// const [x0, x1, y0, y1] = [20, 30, -10, -5];
-
-// UTILS
 
 // PART 1
 /* Due to the constant acceleration down on the probe, no matter what velocity we
