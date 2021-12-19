@@ -10,13 +10,7 @@ type Parent = Node | null;
 type Snailfish = Array<number | Snailfish>;
 
 // INPUTS
-const snailfish = readInput('./../../inputs/day-17.txt');
-const test = `[1,1]
-[2,2]
-[3,3]
-[4,4]`
-  .split('\n')
-  .map((e) => JSON.parse(e));
+const [first, ...rest] = readInput('./../../inputs/day-17.txt');
 
 // UTILS
 /** Class representing a leaf node on the graph */
@@ -36,7 +30,9 @@ class Leaf {
   }
 
   /**
-   * Attempts to split the leaf into a node
+   * Attempts to split the leaf into a node. If the value of the current leaf is >= 10
+   * it gets replaced by a new Node, with a left leaf equal to half of the old value,
+   * rounded down and the right leaf equal to half of the old value rounded up.
    * @returns {boolean} True if split occured, false otherwise
    */
   split(): boolean {
@@ -97,19 +93,29 @@ class Node {
    * @param {Parent} [parent] - Parent node
    */
   constructor(left: Element, right: Element, parent?: Parent) {
+    /** Left child */
     this.left = left;
     this.left.parent = this;
+    /** Right child */
     this.right = right;
     this.right.parent = this;
+    /** Parent node */
     this.parent = parent || null;
   }
 
-  reduce() {
+  /**
+   * Recursively reduces a number, first exploding it as much as possible, and then
+   * splitting it as much as possible.
+   * @returns {Node} Reduced form of this node
+   */
+  reduce(): Node {
     let didExplode, didSplit;
-
     do {
-      didSplit = this.split();
-    } while (didSplit);
+      didExplode = this.explode();
+    } while (didExplode);
+    didSplit = this.split();
+    if (didSplit) this.reduce();
+    return this;
   }
 
   /**
@@ -127,12 +133,15 @@ class Node {
 
   /**
    * Performs a single explosion of a snailfish number, preferring left explosions
-   * @returns {boolean} True if an explosion happened somewhere in the number
+   * @returns {boolean} True if an explosion happened somewhere downward in the tree
    */
   explode(): boolean {
     const { left, right, depth, parent, isRight } = this;
     if (left instanceof Leaf && right instanceof Leaf) {
       if (depth >= 4) {
+        // If both children are leaves, add the right one to the nearest right neighbour
+        // and the left one to the nearest left neighbour. Then replace the node with a
+        // new leaf with value 0.
         const leftNeighbour = this.findLeftNeighbour();
         const rightNeighbour = this.findRightNeighbour();
         if (leftNeighbour) leftNeighbour.add(left);
@@ -143,16 +152,24 @@ class Node {
         }
         return true;
       }
+      // If depth wasn't 4 or more, no exploding happens
       return false;
     }
     if (left instanceof Node) {
+      // If the current node isn't a leaf-only node, try exploding the left side recursively.
       const leftExplode = left.explode();
       if (leftExplode) return true;
     }
+    // If the current node isn't leaf-only *and* the left node didn't explode, try exploding
+    // the right side recursively.
     if (right instanceof Node) return right.explode();
     return false;
   }
 
+  /**
+   * Finds the nearest number (leaf) to the left of this node
+   * @returns {Leaf | null} The closest leaf to the left, or null if no such neighbour was found
+   */
   findLeftNeighbour(): Leaf | null {
     const { isRight, parent } = this;
     if (!isRight && parent) return parent.findLeftNeighbour();
@@ -163,6 +180,10 @@ class Node {
     return null;
   }
 
+  /**
+   * Finds the nearest number (leaf) to the right of this node
+   * @returns {Leaf | null} The closest leaf to the right, or null if no such neighbour was found
+   */
   findRightNeighbour(): Leaf | null {
     const { isRight, parent } = this;
     if (isRight && parent) return parent.findRightNeighbour();
@@ -221,52 +242,19 @@ const parseSnailfish = (arr: Snailfish): Node => {
   return new Node(left, right);
 };
 
-// const add = (a: Node, b: Node): Node => new Node(a, b).reduce();
-
-// /**
-//  * Recursively reduces a snailfish number by trying to explode it and then by trying
-//  * to split it.
-//  * @param {Snailfish} num - Snailfish number to reduce
-//  * @returns {Snailfish} The reduced number
-//  */
-// const reduce = (num: Snailfish): Snailfish => {
-//   let didExplode, didSplit, val;
-//   // Try to explode the number. If exploded, reduce it again
-//   ({ didExplode, val } = explode(num));
-//   if (didExplode) return reduce(val);
-//   // Try to spliut the number. If split, reduce it again
-//   ({ didSplit, val } = split(num));
-//   if (didSplit) return reduce(val);
-//   // If neither exploded or split, return the number
-//   return val;
-// };
+/**
+ * Adds to snailfish nodes by creating a new node with each at left/right positions,
+ * then reduces the number as much as possible.
+ * @param {Node} a - First node
+ * @param {Node} b - Second node
+ * @returns {Node} The reduced sum of the two nodes
+ */
+const add = (a: Node, b: Node): Node => new Node(a, b).reduce();
 
 // PART 1
 
 // PART 2
 
 // OUTPUTS
-let t = [
-  [[[[[9, 8], 1], 2], 3], 4],
-  [7, [6, [5, [4, [3, 2]]]]],
-  [[6, [5, [4, [3, 2]]]], 1],
-  [
-    [3, [2, [1, [7, 3]]]],
-    [6, [5, [4, [3, 2]]]],
-  ],
-  [
-    [3, [2, [8, 0]]],
-    [9, [5, [4, [3, 2]]]],
-  ],
-];
-
-for (let sn of t) {
-  let a = parseSnailfish(sn);
-  console.log(a.toString());
-  a.explode();
-  console.log(a.toString());
-  console.log('\n\n');
-}
-
 // console.log(`Part 1: ${}`);
 // console.log(`Part 2: ${}`);
