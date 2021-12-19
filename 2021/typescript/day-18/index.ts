@@ -10,7 +10,7 @@ type Parent = Node | null;
 type Snailfish = Array<number | Snailfish>;
 
 // INPUTS
-const [first, ...rest] = readInput('./../../inputs/day-17.txt');
+let numbers = readInput('./../../inputs/day-18.txt').map((elem) => JSON.parse(elem));
 
 // UTILS
 /** Class representing a leaf node on the graph */
@@ -147,8 +147,13 @@ class Node {
         if (leftNeighbour) leftNeighbour.add(left);
         if (rightNeighbour) rightNeighbour.add(right);
         if (parent) {
-          if (isRight) parent.right = new Leaf(0);
-          else parent.left = new Leaf(0);
+          if (isRight) {
+            parent.right = new Leaf(0);
+            parent.right.parent = parent;
+          } else {
+            parent.left = new Leaf(0);
+            parent.left.parent = parent;
+          }
         }
         return true;
       }
@@ -252,9 +257,21 @@ const parseSnailfish = (arr: Snailfish): Node => {
 const add = (a: Node, b: Node): Node => new Node(a, b).reduce();
 
 // PART 1
+let [sum, ...rest] = numbers.map(parseSnailfish);
+for (let number of rest) sum = add(sum, number);
 
 // PART 2
+let maximumMagnitude = 0;
+for (let i = 0; i < numbers.length - 1; i++) {
+  for (let j = i + 1; j < numbers.length; j++) {
+    const pairMagnitude = Math.max(
+      add(parseSnailfish(numbers[i]), parseSnailfish(numbers[j])).magnitude,
+      add(parseSnailfish(numbers[j]), parseSnailfish(numbers[i])).magnitude
+    );
+    if (pairMagnitude > maximumMagnitude) maximumMagnitude = pairMagnitude;
+  }
+}
 
 // OUTPUTS
-// console.log(`Part 1: ${}`);
-// console.log(`Part 2: ${}`);
+console.log(`Part 1: ${sum.magnitude}`);
+console.log(`Part 2: ${maximumMagnitude}`);
