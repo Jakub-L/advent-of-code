@@ -85,7 +85,6 @@ const countLit = (image: string[]): number =>
 
 // PART 1
 const firstImage = expandImage(lookup, image, 2);
-console.log(countLit(firstImage));
 
 // PART 2
 const secondImage = expandImage(lookup, image, 50);
