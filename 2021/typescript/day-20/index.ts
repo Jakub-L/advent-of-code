@@ -48,8 +48,6 @@ const getIndex = (i: number, j: number, image: string[], infVal: string): number
  */
 const expandOnce = (lookup: string, image: string[], iteration: number): string[] => {
   const infVal = iteration % 2 ? lookup[lookup.length - 1] : lookup[0];
-  // const infVal = "."
-  console.log(infVal);
   const newImage = [];
   for (let i = -1; i <= image.length; i++) {
     let row = '';
