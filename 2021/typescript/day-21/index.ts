@@ -12,7 +12,14 @@ const start = readInput('./../../inputs/day-21.txt')
   .map(Number);
 
 // UTILS
-function* deterministicDie() {
+
+// PART 1
+/**
+ * Generates the sum of the next three rolls of the deterministic die. It is a 100-sided
+ * die that always generates numbers in order (1, 2, 3...) wrapping around from 100 to 1.
+ * @yields {number} The sum of the next three rolls
+ */
+function* deterministicDie(): Generator {
   let i = 0;
   while (true) {
     i = i + 3;
@@ -20,26 +27,29 @@ function* deterministicDie() {
   }
 }
 
-const game = (start: number[], win: number) => {
+/**
+ * Plays a game with a deterministic die until a given score is reached. Returns the solution
+ * to Part 1 of the day's challenge
+ * @param {number[]} start - The starting positions of both players
+ * @param {number} win - The score needed for a termination of the game. Must be exceeed or
+ *                       equalled. 
+ * @returns {number} The product of the losing player's score and the number of dice rolls
+ *                   needed for a win
+ */
+const deterministicGame = (start: number[], win: number): number => {
   const die = deterministicDie();
-  let positions = Array.from(start);
-  let scores = [0, 0];
+  let [p1, p2] = start;
+  let [s1, s2] = [0, 0];
   for (let i = 1; true; i++) {
-    const rolls = [die.next().value, die.next().value].map(Number);
-    positions = positions.map((num, i) => ((num + rolls[i]) % 10 || 10));
-    const newScores = scores.map((score, i) => score + positions[i]);
-    if (Math.max(...newScores) >= win)
-      return { scores: [newScores[0], scores[1]], rollCount: i * 6 - 3 };
-    scores = newScores;
+    const [r1, r2] = [die.next().value, die.next().value].map(Number);
+    [p1, p2] = [(p1 + r1) % 10 || 10, (p2 + r2) % 10 || 10];
+    if (s1 + p1 >= win) return s2 * (6 * i - 3);
+    [s1, s2] = [s1 + p1, s2 + p2];
   }
 };
-
-// PART 1
 
 // PART 2
 
 // OUTPUTS
-let pos = [4, 8];
-console.log(game(start, 1000));
-// console.log(`Part 1: ${}`);
+console.log(`Part 1: ${deterministicGame(start, 1000)}`);
 // console.log(`Part 2: ${}`);
