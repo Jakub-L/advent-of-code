@@ -4,16 +4,12 @@
  */
 import { readInput } from '../utils';
 
-// TYPES
-
 // INPUTS
 const start = readInput('./../../inputs/day-21.txt')
   .map((str) => (/\d+$/.exec(str) || [])[0])
   .map(Number);
 
-// UTILS
-
-// PART 1
+  // PART 1
 /**
  * Generates the sum of the next three rolls of the deterministic die. It is a 100-sided
  * die that always generates numbers in order (1, 2, 3...) wrapping around from 100 to 1.
