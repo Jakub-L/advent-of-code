@@ -66,7 +66,6 @@ const quantumGame = (
   if (score[0] >= win) return [1, 0];
   if (score[1] >= win) return [0, 1];
   if (!(key in cache)) {
-    console.log(key)
     let [w1, w2] = [0, 0];
     const [s1, s2] = score;
     const [p1, p2] = position;
