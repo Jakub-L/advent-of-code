@@ -17,17 +17,35 @@ type Instruction = {
 };
 
 // INPUTS
-const instructions = readInput('./../../inputs/day-22.txt');
+const instructions = readInput('./../../inputs/day-22.txt').map(parseInstruction);
 const t = [
-  'on x=10..12,y=10..12,z=10..12',
-  'on x=11..13,y=11..13,z=11..13',
-  'off x=9..11,y=9..11,z=9..11',
-  'on x=10..10,y=10..10,z=10..10',
+  'on x=-20..26,y=-36..17,z=-47..7',
+  'on x=-20..33,y=-21..23,z=-26..28',
+  'on x=-22..28,y=-29..23,z=-38..16',
+  'on x=-46..7,y=-6..46,z=-50..-1',
+  'on x=-49..1,y=-3..46,z=-24..28',
+  'on x=2..47,y=-22..22,z=-23..27',
+  'on x=-27..23,y=-28..26,z=-21..29',
+  'on x=-39..5,y=-6..47,z=-3..44',
+  'on x=-30..21,y=-8..43,z=-13..34',
+  'on x=-22..26,y=-27..20,z=-29..19',
+  'off x=-48..-32,y=26..41,z=-47..-37',
+  'on x=-12..35,y=6..50,z=-50..-2',
+  'off x=-48..-32,y=-32..-16,z=-15..-5',
+  'on x=-18..26,y=-33..15,z=-7..46',
+  'off x=-40..-22,y=-38..-28,z=23..41',
+  'on x=-16..35,y=-41..10,z=-47..6',
+  'off x=-32..-23,y=11..30,z=-14..3',
+  'on x=-49..-5,y=-3..45,z=-29..18',
+  'off x=18..30,y=-20..-8,z=-3..13',
+  'on x=-41..9,y=-7..43,z=-33..15',
+  'on x=-54112..-39298,y=-85059..-49293,z=-27449..7877',
+  'on x=967..23432,y=45373..81175,z=27513..53682',
 ].map(parseInstruction);
 
 // UTILS
 function parseInstruction(instruction: string): Instruction {
-  const pattern = /(\w+).*x=(\d+)\.\.(\d+),y=(\d+)\.\.(\d+),z=(\d+)\.\.(\d+)/;
+  const pattern = /(\w+).*x=(-*\d+)\.\.(-*\d+),y=(-*\d+)\.\.(-*\d+),z=(-*\d+)\.\.(-*\d+)/;
   const [_, operation, ...dimensionRanges] = instruction.match(pattern) || [];
   const [xmin, xmax, ymin, ymax, zmin, zmax] = dimensionRanges.map(Number);
   return {
@@ -38,11 +56,80 @@ function parseInstruction(instruction: string): Instruction {
   };
 }
 
+class Region {
+  x: Range;
+  y: Range;
+  z: Range;
+
+  constructor(x: Range, y: Range, z: Range) {
+    this.x = x;
+    this.y = y;
+    this.z = z;
+  }
+
+  get volume() {
+    return (
+      (this.x.max - this.x.min + 1) *
+      (this.y.max - this.y.min + 1) *
+      (this.z.max - this.z.min + 1)
+    );
+  }
+
+  static overlap(a: Region, b: Region): Region | null {
+    const overlap = new Region(
+      { min: Math.max(a.x.min, b.x.min), max: Math.min(a.x.max, b.x.max) },
+      { min: Math.max(a.y.min, b.y.min), max: Math.min(a.y.max, b.y.max) },
+      { min: Math.max(a.z.min, b.z.min), max: Math.min(a.z.max, b.z.max) }
+    );
+    return overlap.volume > 0 ? overlap : null;
+  }
+
+  toString() {
+    return `x=${this.x.min}..${this.x.max},y=${this.y.min}..${this.y.max},z=${this.z.min}..${this.z.max}`;
+  }
+}
+class Cuboid extends Region {
+  volumeSign: number;
+
+  constructor(instruction: Instruction) {
+    super(instruction.x, instruction.y, instruction.z);
+    this.volumeSign = instruction.operation === 'on' ? 1 : -1;
+  }
+}
+const findOverlapsVolume = (target: Region, compared: Region[]): number => {
+  return compared
+    .map((cube, i) => {
+      const overlap = Cuboid.overlap(target, cube);
+      if (overlap) return overlap.volume - findOverlapsVolume(overlap, compared.slice(i + 1));
+      return 0;
+    })
+    .reduce((acc, n) => acc + n, 0);
+};
+
 // PART 1
+let part1On = 0;
+const part1Cubes: Cuboid[] = [];
+
+for (let instruction of t.reverse()) {
+  const cuboid = new Cuboid(instruction);
+  if (
+    cuboid.x.min >= -50 &&
+    cuboid.x.max <= 50 &&
+    cuboid.y.min >= -50 &&
+    cuboid.y.max <= 50 &&
+    cuboid.z.min >= -50 &&
+    cuboid.z.max <= 50
+  ) {
+    if (instruction.operation === 'on')
+      part1On += cuboid.volume - findOverlapsVolume(cuboid, part1Cubes);
+    console.log(part1On);
+    part1Cubes.push(cuboid);
+  }
+}
+console.log(part1Cubes.length);
 
 // PART 2
 
 // OUTPUTS
-console.log(t);
-// console.log(`Part 1: ${}`);
+console.log(`Part 1: ${part1On}`);
 // console.log(`Part 2: ${}`);
