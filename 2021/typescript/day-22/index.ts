@@ -22,6 +22,11 @@ type Instruction = {
 const instructions = readInput('./../../inputs/day-22.txt').map(parseInstruction).reverse();
 
 // UTILS
+/**
+ * Parses an instruction string into an instruction object
+ * @param {string} instruction - Raw instruction string from the input
+ * @returns {Instruction} Object representing the instruction
+ */
 function parseInstruction(instruction: string): Instruction {
   const pattern = /(\w+).*x=(-*\d+)\.\.(-*\d+),y=(-*\d+)\.\.(-*\d+),z=(-*\d+)\.\.(-*\d+)/;
   const [_, operation, ...dimensionRanges] = instruction.match(pattern) || [];
@@ -36,18 +41,26 @@ function parseInstruction(instruction: string): Instruction {
   };
 }
 
+/** Class representing a cuboid volume of space */
 class Cuboid {
   x: Range;
   y: Range;
   z: Range;
 
+  /**
+   * Create a new cuboid
+   * @param {Range} x - Range object representing the minimal and maximal X values
+   * @param {Range} y - Range object representing the minimal and maximal Y values
+   * @param {Range} z - Range object representing the minimal and maximal Z values
+   */
   constructor(x: Range, y: Range, z: Range) {
     this.x = x;
     this.y = y;
     this.z = z;
   }
 
-  get volume() {
+  /** Cuboid volume */
+  get volume(): number {
     return (
       (this.x.max - this.x.min + 1) *
       (this.y.max - this.y.min + 1) *
@@ -55,6 +68,13 @@ class Cuboid {
     );
   }
 
+  /**
+   * Finds the overlap between two cuboids
+   * @param {Cuboid} a - First cuboid
+   * @param {Cuboid} b - Second cuboid
+   * @returns {Cuboid | null} Cuboid representing the intersection, or null if no
+   * intersection exists
+   */
   static overlap(a: Cuboid, b: Cuboid): Cuboid | null {
     const overlap = new Cuboid(
       { min: Math.max(a.x.min, b.x.min), max: Math.min(a.x.max, b.x.max) },
@@ -71,10 +91,21 @@ class Cuboid {
     return overlap;
   }
 
-  toString() {
+  /**
+   * Converts the cuboid to a string representation
+   * @returns {string} A string representation of the cuboid
+   */
+  toString():string {
     return `x=${this.x.min}..${this.x.max},y=${this.y.min}..${this.y.max},z=${this.z.min}..${this.z.max}`;
   }
 }
+
+/**
+ * Finds the total volume of overlapping cuboids
+ * @param {Cuboid} target - The cuboid of interest
+ * @param {Cuboid[]} compared - An array of cuboids, whose overlaps with Target are of interest 
+ * @returns {number} The total volume of the overlapping areas
+ */
 const findOverlapsVolume = (target: Cuboid, compared: Cuboid[]): number => {
   return compared
     .map((cube, i) => {
