@@ -11,9 +11,11 @@ type Range = {
 };
 type Instruction = {
   operation: string;
-  x: Range;
-  y: Range;
-  z: Range;
+  dimensions: {
+    x: Range;
+    y: Range;
+    z: Range;
+  };
 };
 
 // INPUTS
@@ -50,13 +52,15 @@ function parseInstruction(instruction: string): Instruction {
   const [xmin, xmax, ymin, ymax, zmin, zmax] = dimensionRanges.map(Number);
   return {
     operation,
-    x: { min: xmin, max: xmax },
-    y: { min: ymin, max: ymax },
-    z: { min: zmin, max: zmax },
+    dimensions: {
+      x: { min: xmin, max: xmax },
+      y: { min: ymin, max: ymax },
+      z: { min: zmin, max: zmax },
+    },
   };
 }
 
-class Region {
+class Cuboid {
   x: Range;
   y: Range;
   z: Range;
@@ -75,28 +79,27 @@ class Region {
     );
   }
 
-  static overlap(a: Region, b: Region): Region | null {
-    const overlap = new Region(
+  static overlap(a: Cuboid, b: Cuboid): Cuboid | null {
+    const overlap = new Cuboid(
       { min: Math.max(a.x.min, b.x.min), max: Math.min(a.x.max, b.x.max) },
       { min: Math.max(a.y.min, b.y.min), max: Math.min(a.y.max, b.y.max) },
       { min: Math.max(a.z.min, b.z.min), max: Math.min(a.z.max, b.z.max) }
     );
-    return overlap.volume > 0 ? overlap : null;
+    if (
+      overlap.x.max < overlap.x.min ||
+      overlap.y.max < overlap.y.min ||
+      overlap.z.max < overlap.z.min
+    ) {
+      return null;
+    }
+    return overlap;
   }
 
   toString() {
     return `x=${this.x.min}..${this.x.max},y=${this.y.min}..${this.y.max},z=${this.z.min}..${this.z.max}`;
   }
 }
-class Cuboid extends Region {
-  volumeSign: number;
-
-  constructor(instruction: Instruction) {
-    super(instruction.x, instruction.y, instruction.z);
-    this.volumeSign = instruction.operation === 'on' ? 1 : -1;
-  }
-}
-const findOverlapsVolume = (target: Region, compared: Region[]): number => {
+const findOverlapsVolume = (target: Cuboid, compared: Cuboid[]): number => {
   return compared
     .map((cube, i) => {
       const overlap = Cuboid.overlap(target, cube);
@@ -110,8 +113,8 @@ const findOverlapsVolume = (target: Region, compared: Region[]): number => {
 let part1On = 0;
 const part1Cubes: Cuboid[] = [];
 
-for (let instruction of t.reverse()) {
-  const cuboid = new Cuboid(instruction);
+for (let { operation, dimensions } of instructions.reverse()) {
+  const cuboid = new Cuboid(dimensions.x, dimensions.y, dimensions.z);
   if (
     cuboid.x.min >= -50 &&
     cuboid.x.max <= 50 &&
@@ -120,16 +123,25 @@ for (let instruction of t.reverse()) {
     cuboid.z.min >= -50 &&
     cuboid.z.max <= 50
   ) {
-    if (instruction.operation === 'on')
+    if (operation === 'on') {
       part1On += cuboid.volume - findOverlapsVolume(cuboid, part1Cubes);
-    console.log(part1On);
+    }
     part1Cubes.push(cuboid);
   }
 }
-console.log(part1Cubes.length);
 
 // PART 2
+let part2On = 0;
+const part2Cubes: Cuboid[] = [];
+
+for (let { operation, dimensions } of instructions.reverse()) {
+  const cuboid = new Cuboid(dimensions.x, dimensions.y, dimensions.z);
+  if (operation === 'on') {
+    part2On += cuboid.volume - findOverlapsVolume(cuboid, part2Cubes);
+  }
+  part2Cubes.push(cuboid);
+}
 
 // OUTPUTS
 console.log(`Part 1: ${part1On}`);
-// console.log(`Part 2: ${}`);
+console.log(`Part 2: ${part2On}`);
