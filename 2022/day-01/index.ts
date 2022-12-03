@@ -5,19 +5,24 @@
 import { readInput } from '../utils';
 
 // INPUTS
-const calories: number[][] = readInput('./day-01/input.txt', '\n\n').map(elf =>
+const elves: number[][] = readInput('./day-01/input.txt', '\n\n').map(elf =>
   elf.split('\n').map(Number)
 );
 
-// PART 1
-const calorieSums = calories
-  .map(elf => elf.reduce((sum, calories) => sum + calories, 0))
-  .sort((a, b) => b - a);
-const maxCalories = calorieSums[0];
-
-// PART 2
-const topThreeSum = calorieSums[0] + calorieSums[1] + calorieSums[2];
+// PART 1 & 2
+/**
+ * Finds the total calories by the elves that carry the most calories each
+ * @param {number[][]} elves - Array of elves, each being an array of calories carried
+ * @param {number} topSize - Number of top-calorie-rich elves to look at
+ * @returns {number} Total calories carried by the top elves
+ */
+const topCalorieSum = (elves: number[][], topSize: number): number =>
+  elves
+    .map(elf => elf.reduce((sum, calories) => sum + calories, 0))
+    .sort((a, b) => b - a)
+    .slice(0, topSize)
+    .reduce((sum, elf) => sum + elf, 0);
 
 // PRINT RESULTS
-console.log(`Result for Part 1: ${maxCalories}`);
-console.log(`Result for Part 2: ${topThreeSum}`);
+console.log(`Result for Part 1: ${topCalorieSum(elves, 1)}`);
+console.log(`Result for Part 2: ${topCalorieSum(elves, 3)}`);
