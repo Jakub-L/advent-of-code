@@ -74,7 +74,7 @@ const crates = [
   ['C', 'M', 'D', 'B', 'F'],
   ['F', 'C', 'Q', 'G']
 ];
-const instructions: any = readInput('./day-05/input.txt', '\n\n')[1]
+const instructions: Instruction[] = readInput('./day-05/input.txt', '\n\n')[1]
   .split('\n')
   .map(str => str.match(/\d+/g)?.map(Number) as [number, number, number])
   .map(instr => new Instruction(instr));
@@ -98,5 +98,9 @@ const getTopCratesAfterInstructions = (
 };
 
 // RESULTS
-console.log(`Part 1 solution: ${getTopCratesAfterInstructions(new Cargo(crates), instructions, '9000')}`);
-console.log(`Part 2 solution: ${getTopCratesAfterInstructions(new Cargo(crates), instructions, '9001')}`);
+console.log(
+  `Part 1 solution: ${getTopCratesAfterInstructions(new Cargo(crates), instructions, '9000')}`
+);
+console.log(
+  `Part 2 solution: ${getTopCratesAfterInstructions(new Cargo(crates), instructions, '9001')}`
+);
