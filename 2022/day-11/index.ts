@@ -14,6 +14,9 @@
  * Obviously, (k*n) has to be a number that divides n. If we use k*n such that it divides
  * every monkey's modulus check, we can just store (worry mod k*n). The simplest way
  * to find (k*n) such that it divides all monkeys' moduli is to multiply them together.
+ * 
+ * I also manually parsed the monkey inputs rather than writing a function that could
+ * interpret the functions, since there's only 8 of them.
  */
 
 // INPUTS
