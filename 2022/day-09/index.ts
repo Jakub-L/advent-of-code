@@ -6,16 +6,6 @@ import { readInput } from '../utils';
 
 // INPUTS
 const moves: Move[] = readInput('./day-09/input.txt').map(parseInstruction);
-// const moves: Move[] = `R 4
-// U 4
-// L 3
-// D 1
-// R 4
-// D 1
-// L 5
-// R 2`
-//   .split('\n')
-//   .map(parseInstruction);
 
 // UTILS
 type Move = [string, number];
@@ -33,61 +23,84 @@ function parseInstruction(instruction: string): Move {
 
 /** A single rope */
 class Rope {
-  head: Point = [0, 0];
-  tail: Point = [0, 0];
-  private allVisitedByTail: Point[] = [[0, 0]];
-  private allVisitedByHead: Point[] = [[0, 0]];
+  segments: Point[];
+  private _visitedByTail: { [index: string]: Point } = {};
+  private moves = { U: [0, 1], D: [0, -1], R: [1, 0], L: [-1, 0] };
 
   /**
    * Creates a new rope
-   * @param {Move[]} moves - A list of moves to define the rope's movements
+   * @param {number} length - Number of segments in the rope. Minimum 2 (head and tail)
    */
-  constructor(moves: Move[]) {
-    for (const move of moves) {
-      this.applyMove(move);
+  constructor(length: number, moves: Move[]) {
+    if (length < 2) throw RangeError('Length must be greater than 1');
+    this.segments = Array.from({ length }, _ => new Array(2).fill(0) as Point);
+    for (const move of moves) this.applyMove(move);
+  }
+
+  /**
+   * Updates the position of a segment of the rope
+   * @param {number} i - Index of the segment to update
+   */
+  updateSegmentPosition(i: number) {
+    if (i < 1) throw RangeError('Index must be 1 or above');
+    const [headX, headY] = this.segments[i - 1];
+    const [tailX, tailY] = this.segments[i];
+    const [dx, dy] = [headX - tailX, headY - tailY];
+    if (dx === 0 && Math.abs(dy) > 1) {
+      this.segments[i][1] += Math.sign(dy);
+    } else if (dy === 0 && Math.abs(dx) > 1) {
+      this.segments[i][0] += Math.sign(dx);
+    } else if (Math.abs(dx) + Math.abs(dy) > 2) {
+      this.segments[i][0] += Math.sign(dx);
+      this.segments[i][1] += Math.sign(dy);
     }
   }
 
   /**
-   * Moves the head, and if appropriate, the tail as well
-   * @param {Move} move - Movement for the head to take
+   * Moves the head of the rope and updates positions of all segments
+   * @param {Move} move - Move to apply to the head of the rope
    */
-  private applyMove(move: Move) {
+  applyMove(move: Move) {
     const [direction, distance] = move;
-    const steps: { [index: string]: number[] } = {
-      R: [1, 0],
-      L: [-1, 0],
-      U: [0, 1],
-      D: [0, -1]
-    };
-    for (let i = 0; i < distance; i++) {
-      this.head = this.head.map((pos, i) => pos + steps[direction][i]) as Point;
-      this.moveTail();
-      this.allVisitedByHead.push(this.head.slice() as Point);
-      this.allVisitedByTail.push(this.tail.slice() as Point);
+    this._visitedByTail[this.tail.toString()] = this.tail;
+    for (let n = 0; n < distance; n++) {
+      const [dx, dy] = this.moves[direction as keyof typeof this.moves];
+      this.head[0] += dx;
+      this.head[1] += dy;
+      for (let i = 1; i < this.length; i++) {
+        this.updateSegmentPosition(i);
+      }
+      this._visitedByTail[this.tail.toString()] = this.tail;
     }
   }
 
-  get visitedByTail(): Point[] {
-    return Object.values(
-      this.allVisitedByTail.reduce((acc, point) => ({ ...acc, [point.toString()]: point }), {})
-    );
+  /** The length of the rope (number of segments) */
+  get length() {
+    return this.segments.length;
   }
 
-  /** Moves the tail if it gets too far from the head */
-  private moveTail() {
-    const [dx, dy] = this.head.map((coord, i) => coord - this.tail[i]);
-    if (dx === 0 && Math.abs(dy) > 1) {
-      this.tail[1] += Math.sign(dy);
-    } else if (dy === 0 && Math.abs(dx) > 1) {
-      this.tail[0] += Math.sign(dx);
-    } else if (Math.abs(dx) + Math.abs(dy) > 2) {
-      // When the tail needs to catch up diagonally, it moves into the space the head took up
-      // after the previous move
-      this.tail = this.allVisitedByHead[this.allVisitedByHead.length - 1].slice() as Point;
-    }
+  /** Head of the rope */
+  get head() {
+    return this.segments[0];
+  }
+
+  /** Tail of the rope */
+  get tail() {
+    return this.segments[this.length - 1];
+  }
+
+  /** Number of unique points visited by the tail */
+  get numberVisitedByTail(): number {
+    return Object.values(this._visitedByTail).length;
   }
 }
 
-const r = new Rope(moves);
-console.log(r.visitedByTail.length)
+// PART 1
+const shortRope = new Rope(2, moves);
+
+// PART 2
+const longRope = new Rope(10, moves);
+
+// RESULTS
+console.log(`Part 1 solution: ${shortRope.numberVisitedByTail}`);
+console.log(`Part 2 solution: ${longRope.numberVisitedByTail}`);
