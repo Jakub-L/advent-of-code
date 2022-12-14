@@ -8,10 +8,6 @@ import { readInput } from '../utils';
 const walls: Wall[] = readInput('./day-14/input.txt', '\n').map(wall =>
   wall.split(' -> ').map(coords => coords.split(',').map(Number) as Point)
 );
-// const walls: Wall[] = `498,4 -> 498,6 -> 496,6
-// 503,4 -> 502,4 -> 502,9 -> 494,9`
-//   .split('\n')
-//   .map(wall => wall.split(' -> ').map(coords => coords.split(',').map(Number) as Point));
 
 // UTILS
 type Point = [number, number];
