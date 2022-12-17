@@ -8,29 +8,57 @@ import { readInput } from '../utils';
 const gusts: number[] = readInput('./day-17/input.txt', '').map(char =>
   char === '>' ? 1 : -1
 );
-// const gusts: number[] = `>>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>`.split("").map(char =>
-//   char === '>' ? 1 : -1
-// );
-
-const shapes: Point[][] = [
-  [[0, 0], [1, 0], [2, 0], [3, 0]],
-  [[0, 1], [1, 0], [1, 1], [1, 2], [2, 1]],
-  [[0, 0], [1, 0], [2, 0], [2, 1], [2, 2]],
-  [[0, 0], [0, 1], [0, 2], [0, 3]],
-  [[0, 0], [0, 1], [1, 0], [1, 1]]
-]
+const rocks: Point[][] = [
+  [
+    [0, 0],
+    [1, 0],
+    [2, 0],
+    [3, 0]
+  ],
+  [
+    [0, 1],
+    [1, 0],
+    [1, 1],
+    [1, 2],
+    [2, 1]
+  ],
+  [
+    [0, 0],
+    [1, 0],
+    [2, 0],
+    [2, 1],
+    [2, 2]
+  ],
+  [
+    [0, 0],
+    [0, 1],
+    [0, 2],
+    [0, 3]
+  ],
+  [
+    [0, 0],
+    [0, 1],
+    [1, 0],
+    [1, 1]
+  ]
+];
 
 // UTILS
-type Point = [number, number]
+type Point = [number, number];
 
-const getGust = (time: number) => gusts[time % gusts.length]
-
+/** Single rock in 2D space */
 class Rock {
   points: Point[];
 
-  constructor(time: number, x0: number, y0: number) {
-    this.points = shapes[time % shapes.length]
-    this.move(x0, y0)
+  /**
+   * Creates a new rock
+   * @param {number} index - Index of the rock in the array of all shapes
+   * @param {number} x - Starting x-position
+   * @param {number} y - Starting y-position
+   */
+  constructor(index: number, x: number, y: number) {
+    this.points = rocks[index];
+    this.move(x, y);
   }
 
   /**
@@ -39,56 +67,127 @@ class Rock {
    * @param {number} dy - Y distance to move (positive up)
    */
   move(dx: number, dy: number) {
-    this.points = this.points.map(([x, y]) => [x + dx, y + dy]) as Point[]
+    this.points = this.points.map(([x, y]) => [x + dx, y + dy]) as Point[];
   }
 
+  /**
+   * Checks whether the rock can move without bumping into either the chamber walls
+   * or already settled rocks.
+   * @param {number} dx - X distance to move (positive left)
+   * @param {number} dy - Y distance to move (positive up)
+   * @param {number} chamberWidth - Width of the chamber
+   * @param {Set.<string>} filledSpaces - Set of already occupied spaces
+   * @returns {boolean} Whether the rock can move by specified dx/dy
+   */
   canMove(dx: number, dy: number, chamberWidth: number, filledSpaces: Set<string>): boolean {
-    return this.points.every(([x, y]) => (x + dx) >= 0 && (x + dx) < chamberWidth && (y + dy) >= 0 && !filledSpaces.has(`${x + dx},${y + dy}`))
+    return this.points.every(
+      ([x, y]) =>
+        x + dx >= 0 &&
+        x + dx < chamberWidth &&
+        y + dy > 0 &&
+        !filledSpaces.has(`${x + dx},${y + dy}`)
+    );
   }
 
+  /** Highest Y-coordinate of all points in the rock */
   get topY(): number {
-    return this.points.reduce((acc, [_, y]) => Math.max(acc, y), -Infinity)
+    return this.points.reduce((acc, [_, y]) => Math.max(acc, y), -Infinity);
   }
 }
 
+/** Chamber into which rocks are dropped */
 class Chamber {
-  rockTicker: number = 0;
-  gustTicker: number = 0;
-  filledSpaces: Set<string> = new Set();
+  /** Index of the next rock */
+  rockIndex: number = 0;
+  /** Index of the next gust */
+  gustIndex: number = 0;
+  /** Set of coordinates occupied by rocks */
+  occupied: Set<string> = new Set();
+  /** Cache of previously-seen states */
+  cache: { [index: string]: [number, number] } = {};
+  /** Width of the chamber */
   width: number;
+  /** Default spawn positions w.r.t. (0, topY) */
   spawnPos: Point;
-  height: number = 0;
+  /** Highest Y coordinate in the tower */
+  topY: number = 0;
+  /** Y coordinate value added through shortcutting */
+  addedY: number = 0;
 
-
+  /**
+   * Creates a new volcanic chamber
+   * @param {number} width - Width of the chamber
+   * @param {Point} spawnPos - Default spawn positions w.r.t. the top of the tower
+   */
   constructor(width: number, spawnPos: Point) {
     this.width = width;
     this.spawnPos = spawnPos;
   }
 
-  dropNRocks(n: number) {
+  /**
+   * Drops a number of rocks into the chamber
+   * @param {number} n - Number of rocks to drop
+   */
+  dropRocks(n: number) {
     for (let i = 0; i < n; i++) {
-      this.dropRock()
+      // Spawn a new rock at the correct position
+      const [x, y] = this.spawnPos;
+      const rock = new Rock(this.rockIndex, x, y + this.topY);
+      let isMoving = true;
+      while (isMoving) {
+        // Move the rock with the wind and gravity until it can't move
+        const dx = gusts[this.gustIndex];
+        this.gustIndex = (this.gustIndex + 1) % gusts.length;
+        if (rock.canMove(dx, 0, this.width, this.occupied)) rock.move(dx, 0);
+        if (rock.canMove(0, -1, this.width, this.occupied)) rock.move(0, -1);
+        else isMoving = false;
+      }
+      rock.points.forEach(([x, y]) => this.occupied.add(`${x},${y}`));
+      this.topY = Math.max(this.topY, rock.topY);
+      this.rockIndex = (this.rockIndex + 1) % rocks.length;
+      // Unique key used for caching
+      const key = `${this.gustIndex} - ${this.rockIndex} - ${this.state}`;
+      if (key in this.cache) {
+        // Iteration at which the key was last seen and the height at that time
+        const [prevI, prevY] = this.cache[key];
+        // Length of repeat cycle and change in height at that cycle
+        const [dI, dY] = [i - prevI, this.topY - prevY];
+        // How many times the cycle can be squeezed into remaining iterations
+        const repeats = Math.floor((n - i) / dI);
+        this.topY += repeats * dY
+        // The Y added through shortcutting is kept separate, since the tower isn't
+        // actually this tall. We're just holding the added height in a virtual
+        // counter.
+        this.addedY += repeats * dY;
+        i += repeats * dI;
+      }
+      this.cache[key] = [i, this.topY];
     }
   }
 
-  private dropRock() {
-    const [x, y] = this.spawnPos
-    const rock = new Rock(this.rockTicker, x, y + this.height)
-    let isMoving = true;
-    this.rockTicker += 1
-    while (isMoving) {
-      const dx = getGust(this.gustTicker)
-      this.gustTicker += 1;
-      if (rock.canMove(dx, 0, this.width, this.filledSpaces)) rock.move(dx, 0)
-      if (rock.canMove(0, -1, this.width, this.filledSpaces)) rock.move(0, -1)
-      else isMoving = false;
-    }
-    rock.points.forEach(([x, y]) => this.filledSpaces.add(`${x},${y}`))
-    this.height = Math.max(this.height, rock.topY + 1);
-  }
+  /** Height of the total tower */
+  get height() {return this.topY + this.addedY}
 
+  /** State of the tower, defined by top 30 rows of occupied spaces */
+  private get state(): string {
+    const result: string[] = [];
+    for (let y = this.topY; y > this.topY - 30; y--) {
+      for (let x = 0; x < this.width; x++) {
+        if (this.occupied.has(`${x},${y}`)) result.push(`${x},${this.topY - y}`);
+      }
+    }
+    return result.sort().join('|');
+  }
 }
 
-const c = new Chamber(7, [2, 3])
-c.dropNRocks(2022)
-console.log(c.height)
+// PART 1
+const part1 = new Chamber(7, [2, 4]);
+part1.dropRocks(2022);
+
+// PART 2
+const part2 = new Chamber(7, [2, 4]);
+part2.dropRocks(1_000_000_000_000); 
+
+// RESULTS
+console.log(`Part 1 solution: ${part1.height}`)
+console.log(`Part 2 solution: ${part2.height}`)
