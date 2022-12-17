@@ -8,23 +8,15 @@ import { readInput } from '../utils';
 const valveDefinitions: ValveDefinition[] =
   readInput('./day-16/input.txt').map(parseValveDefinition);
 
-// const valveDefinitions: ValveDefinition[] =
-//   `Valve AA has flow rate=0; tunnels lead to valves DD, II, BB
-// Valve BB has flow rate=13; tunnels lead to valves CC, AA
-// Valve CC has flow rate=2; tunnels lead to valves DD, BB
-// Valve DD has flow rate=20; tunnels lead to valves CC, AA, EE
-// Valve EE has flow rate=3; tunnels lead to valves FF, DD
-// Valve FF has flow rate=0; tunnels lead to valves EE, GG
-// Valve GG has flow rate=0; tunnels lead to valves FF, HH
-// Valve HH has flow rate=22; tunnel leads to valve GG
-// Valve II has flow rate=0; tunnels lead to valves AA, JJ
-// Valve JJ has flow rate=21; tunnel leads to valve II`
-//     .split('\n')
-//     .map(parseValveDefinition);
-
 // UTILS
 type ValveDefinition = { name: string; flow: number; connections: string[] };
+type Distance1D = { [index: string]: number };
 
+/**
+ * Parses a string valve definition to an object
+ * @param {string} definition - String defining valve, its flow and connections
+ * @returns {Object} Object containing the name, flow and connected valves
+ */
 function parseValveDefinition(definition: string): ValveDefinition {
   const [_, name, flow, connections] = definition.match(
     /([A-Z]{2})\D*(\d+)[;a-z ]*([\w, ]+)/
@@ -32,74 +24,91 @@ function parseValveDefinition(definition: string): ValveDefinition {
   return { name, flow: Number(flow), connections: connections.split(', ') };
 }
 
-class Valve {
-  name: string;
-  flow: number;
-  connections: Valve[] = [];
-
-  constructor(name: string, flow: number) {
-    this.name = name;
-    this.flow = flow;
-  }
-}
-
+/** Network of valves connected by tunnels */
 class Network {
-  root: Valve;
-  valves: { [index: string]: Valve } = {};
+  /** Dictionary of all valves and their flows */
+  allValves: { [index: string]: number } = {};
+  /** Array of valve names for valves with nonzero flow */
+  valvesWithFlow: string[] = [];
+  /** Object of distances between any two nodes on the network */
+  distances: { [index: string]: Distance1D } = {};
   count: number = 0
 
+  /**
+   * Creates a new network
+   * @param {ValveDefinition[]} valveDefinitions - Array of valve definition objects
+   */
   constructor(valveDefinitions: ValveDefinition[]) {
-    for (const { name, flow } of valveDefinitions) {
-      this.valves[name] = new Valve(name, flow);
+    for (const { name, flow, connections } of valveDefinitions) {
+      this.allValves[name] = flow;
+      this.distances[name] = connections.reduce((acc, c) => ({ ...acc, [c]: 1 }), {});
+      if (flow > 0) this.valvesWithFlow.push(name);
     }
-    for (const { name, connections } of valveDefinitions) {
-      this.valves[name].connections = connections.map(name => this.valves[name]);
-    }
-    this.root = this.valves['AA'];
+    this.computeDistances();
   }
 
+  /**
+   * Finds the highest flow that can be achieved in a network
+   * @param {number} timeLeft - Time remaining before explosion
+   * @param {boolean} [elephant=false] - Whether the elephant is yet to act
+   * @param {string[]} [toCheck=this.valvesWithFlow] - Valve names to still check
+   * @param {Object.<string, number>} [memo={}] - Memoization object
+   * @param {string} current - The name of the currently inspected valve
+   * @returns {number} The maximum flow achievable with given inputs
+   */
   findBestFlow(
     timeLeft: number,
-    extraPlayers: number = 0,
-    opened: Set<string> = new Set(),
+    elephant: boolean = false,
+    toCheck: string[] = this.valvesWithFlow,
     memo: { [index: string]: number } = {},
-    current: Valve = this.root
+    current: string = 'AA'
   ): number {
+    const key = `${current}-${timeLeft}-${toCheck.sort()}-${elephant}`;
     let result = 0;
-    const key = `${current.name} - ${timeLeft} - ${Array.from(opened.values())
-      .sort()
-      .join()} - ${extraPlayers}`;
-    if (timeLeft === 0) {
-      return extraPlayers > 0 ? this.findBestFlow(26, extraPlayers - 1, opened, memo) : 0;
-    }
+    this.count++
     if (key in memo) return memo[key];
-    if (!opened.has(current.name) && current.flow > 0) {
-      const newOpened = new Set(opened);
-      newOpened.add(current.name);
-      result = Math.max(
-        result,
-        (timeLeft - 1) * current.flow +
-          this.findBestFlow(timeLeft - 1, extraPlayers, newOpened, memo, current)
-      );
+    for (const valve of toCheck) {
+      const travelTime = this.distances[current][valve];
+      const flow = this.allValves[valve];
+      if (travelTime < timeLeft) {
+        const newTime = timeLeft - travelTime - 1;
+        const newToCheck = toCheck.filter(e => e !== valve);
+        result = Math.max(
+          result,
+          flow * newTime + this.findBestFlow(newTime, elephant, newToCheck, memo, valve)
+        );
+      }
     }
-    for (const neighbour of current.connections) {
-      result = Math.max(
-        result,
-        this.findBestFlow(timeLeft - 1, extraPlayers, opened, memo, neighbour)
-      );
-    }
+    result = Math.max(result, elephant ? this.findBestFlow(26, false, toCheck, memo) : 0);
     memo[key] = result;
-    console.log(++this.count);
     return result;
+  }
+
+  /** Precomputes distances between valves, using the Floyd-Warshall algorithm */
+  private computeDistances() {
+    for (const k in this.allValves) {
+      for (const i in this.allValves) {
+        for (const j in this.allValves) {
+          this.distances[i][j] = Math.min(this.dist(i, j), this.dist(i, k) + this.dist(k, j));
+        }
+      }
+    }
+  }
+
+  /**
+   * Finds the precomputed distance between two valves
+   * @param {string} from - Name of the origin valve
+   * @param {string} to - Name of target valve
+   * @returns {number} Distance between two valves, if precomputed, Infinity otherwise
+   */
+  private dist(from: string, to: string): number {
+    return this.distances?.[from]?.[to] ?? Infinity;
   }
 }
 
-// PART 1
-const part1 = new Network(valveDefinitions);
-const part2 = new Network(valveDefinitions);
-
-// PART 2
+// PART 1 & 2
+const pipes = new Network(valveDefinitions);
 
 // RESULTS
-// console.log(part1.findBestFlow(30));
-console.log(part2.findBestFlow(26, 1));
+console.log(`Part 1 solution: ${pipes.findBestFlow(30)}`);
+console.log(`Part 2 solution: ${pipes.findBestFlow(26, true)}`);
