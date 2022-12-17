@@ -9,38 +9,11 @@ const gusts: number[] = readInput('./day-17/input.txt', '').map(char =>
   char === '>' ? 1 : -1
 );
 const rocks: Point[][] = [
-  [
-    [0, 0],
-    [1, 0],
-    [2, 0],
-    [3, 0]
-  ],
-  [
-    [0, 1],
-    [1, 0],
-    [1, 1],
-    [1, 2],
-    [2, 1]
-  ],
-  [
-    [0, 0],
-    [1, 0],
-    [2, 0],
-    [2, 1],
-    [2, 2]
-  ],
-  [
-    [0, 0],
-    [0, 1],
-    [0, 2],
-    [0, 3]
-  ],
-  [
-    [0, 0],
-    [0, 1],
-    [1, 0],
-    [1, 1]
-  ]
+  [[0, 0], [1, 0], [2, 0], [3, 0]],
+  [[0, 1], [1, 0], [1, 1], [1, 2], [2, 1]],
+  [[0, 0], [1, 0], [2, 0], [2, 1], [2, 2]],
+  [[0, 0], [0, 1], [0, 2], [0, 3]],
+  [[0, 0], [0, 1], [1, 0], [1, 1]]
 ];
 
 // UTILS
@@ -98,21 +71,21 @@ class Rock {
 /** Chamber into which rocks are dropped */
 class Chamber {
   /** Index of the next rock */
-  rockIndex: number = 0;
+  private rockIndex: number = 0;
   /** Index of the next gust */
-  gustIndex: number = 0;
+  private gustIndex: number = 0;
   /** Set of coordinates occupied by rocks */
-  occupied: Set<string> = new Set();
+  private occupied: Set<string> = new Set();
   /** Cache of previously-seen states */
-  cache: { [index: string]: [number, number] } = {};
+  private cache: { [index: string]: [number, number] } = {};
   /** Width of the chamber */
-  width: number;
+  private width: number;
   /** Default spawn positions w.r.t. (0, topY) */
-  spawnPos: Point;
+  private spawnPos: Point;
   /** Highest Y coordinate in the tower */
-  topY: number = 0;
+  private topY: number = 0;
   /** Y coordinate value added through shortcutting */
-  addedY: number = 0;
+  private addedY: number = 0;
 
   /**
    * Creates a new volcanic chamber
@@ -154,7 +127,6 @@ class Chamber {
         const [dI, dY] = [i - prevI, this.topY - prevY];
         // How many times the cycle can be squeezed into remaining iterations
         const repeats = Math.floor((n - i) / dI);
-        this.topY += repeats * dY
         // The Y added through shortcutting is kept separate, since the tower isn't
         // actually this tall. We're just holding the added height in a virtual
         // counter.
@@ -166,7 +138,7 @@ class Chamber {
   }
 
   /** Height of the total tower */
-  get height() {return this.topY + this.addedY}
+  get height() { return this.topY + this.addedY }
 
   /** State of the tower, defined by top 30 rows of occupied spaces */
   private get state(): string {
@@ -186,7 +158,7 @@ part1.dropRocks(2022);
 
 // PART 2
 const part2 = new Chamber(7, [2, 4]);
-part2.dropRocks(1_000_000_000_000); 
+part2.dropRocks(1_000_000_000_000);
 
 // RESULTS
 console.log(`Part 1 solution: ${part1.height}`)
