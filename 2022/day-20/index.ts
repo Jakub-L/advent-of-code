@@ -58,4 +58,4 @@ class Decryptor {
 
 // RESULTS
 console.log(`Part 1 solution: ${new Decryptor(rawData).decrypt().coordinates}`);
-console.log(`Part 1 solution: ${new Decryptor(rawData, 811589153).decrypt(10).coordinates}`);
+console.log(`Part 2 solution: ${new Decryptor(rawData, 811589153).decrypt(10).coordinates}`);
