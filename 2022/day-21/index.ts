@@ -106,4 +106,4 @@ const findHumn = (monkeys: string[]): number => {
 
 // RESULTS
 console.log(`Part 1 solution: ${solve(monkeys)}`);
-console.log(`Part 1 solution: ${findHumn(monkeys)}`);
+console.log(`Part 2 solution: ${findHumn(monkeys)}`);
