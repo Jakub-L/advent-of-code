@@ -1,11 +1,10 @@
 /**
- * Solution to Day 22 challenge of Advent of Code 2022
- * https://adventofcode.com/2022/day/22
+ * Solution to Day 23 challenge of Advent of Code 2022
+ * https://adventofcode.com/2022/day/23
  */
 import { readInput } from '../utils';
 
 // INPUTS
-// prettier-ignore
 const startingGrove: string[][] = readInput('./day-23/input.txt', '\n')
   .map(row => row.split(''));
 
@@ -14,14 +13,12 @@ type Dir = [x: number, y: number];
 type ProposalOption = { move: Dir; checks: Dir[] };
 type ProposalList = { move: Dir; elves: Elf[] };
 
-// prettier-ignore
 const neighbours: number[][] = [
   [-1, -1], [0, -1], [1, -1],
   [-1, 0], [1, 0],
   [-1, 1], [0, 1], [1, 1]
 ]
 
-// prettier-ignore
 const proposalOptions: ProposalOption[] = [
   { move: [0, -1], checks: [[0, -1], [1, -1], [-1, -1]] },
   { move: [0, 1], checks: [[0, 1], [1, 1], [-1, 1]] },
