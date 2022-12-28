@@ -5,7 +5,6 @@
 import { readInput } from '../utils';
 
 // INPUTS
-// prettier-ignore
 const initialValley: string[][] = readInput('./day-24/input.txt', '\n')
   .map(row => row.split(''));
 
@@ -13,7 +12,6 @@ const initialValley: string[][] = readInput('./day-24/input.txt', '\n')
 type Point = [x: number, y: number];
 type Dir = [dx: number, dy: number];
 
-// prettier-ignore
 const moves: { [index: string]: Dir } = {
   '>': [1, 0], '<': [-1, 0],
   'v': [0, 1], '^': [0, -1]
@@ -149,7 +147,6 @@ class Valley {
    * @returns {Point[]} Array of points that can be reached from P
    */
   private getMoves([x, y]: Point): Point[] {
-    // prettier-ignore
     return [[0, 0], [-1, 0], [0, -1], [1, 0], [0, 1]]
       .map(([dx, dy]) => [x + dx, y + dy] as Point)
       .filter(([x, y]) => this.spaces.has(`${x},${y}`));
