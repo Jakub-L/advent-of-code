@@ -32,7 +32,7 @@ const parseGame = (game: string): Game => {
 
 const games = input.map(parseGame);
 
-// Part 1
+// UTILS
 /**
  * Checks whether a game is possible with the given number of cubes.
  *
@@ -49,10 +49,6 @@ const isPossible = (game: Game, cubes: CubeCounts = { red: 12, green: 13, blue: 
   return true;
 };
 
-const part1 = sum(games.map(game => (isPossible(game) ? game.number : 0)));
-console.log(`Part 1: ${part1}`);
-
-// Part 2
 /**
  * Returns the minimum number of cubes needed to play the given game.
  *
@@ -77,4 +73,6 @@ const minimumCubes = (game: Game): CubeCounts => {
  */
 const cubePower = (cubes: CubeCounts): number => prod(Object.values(cubes));
 
+// Results
+console.log(`Part 1: ${sum(games.map(game => (isPossible(game) ? game.number : 0)))}`);
 console.log(`Part 2: ${sum(games.map(minimumCubes).map(cubePower))}`);
