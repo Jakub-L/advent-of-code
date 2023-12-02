@@ -1,5 +1,5 @@
 import { readFile } from "@jakub-l/aoc-lib/input-parsing";
-import { sum } from "@jakub-l/aoc-lib/math";
+import { prod, sum } from "@jakub-l/aoc-lib/math";
 
 type Game = {
   number: number;
@@ -30,6 +30,8 @@ const parseGame = (game: string): Game => {
   return { number, draws };
 };
 
+const games = input.map(parseGame);
+
 // Part 1
 /**
  * Checks whether a game is possible with the given number of cubes.
@@ -47,5 +49,32 @@ const isPossible = (game: Game, cubes: CubeCounts = { red: 12, green: 13, blue: 
   return true;
 };
 
-const part1 = sum(input.map(parseGame).map(game => (isPossible(game) ? game.number : 0)));
+const part1 = sum(games.map(game => (isPossible(game) ? game.number : 0)));
 console.log(`Part 1: ${part1}`);
+
+// Part 2
+/**
+ * Returns the minimum number of cubes needed to play the given game.
+ *
+ * @param {Game} game - The game to check.
+ * @returns {CubeCounts} The minimum number of cubes needed.
+ */
+const minimumCubes = (game: Game): CubeCounts => {
+  const minimum = { red: 0, blue: 0, green: 0 };
+  for (const draw of game.draws) {
+    minimum.red = Math.max(minimum.red, draw.red);
+    minimum.blue = Math.max(minimum.blue, draw.blue);
+    minimum.green = Math.max(minimum.green, draw.green);
+  }
+  return minimum;
+};
+
+/**
+ * Returns the power of the given cube counts (product of all cube counts).
+ *
+ * @param {CubeCounts} cubes - The cube counts.
+ * @returns {number} The power of the cube counts.
+ */
+const cubePower = (cubes: CubeCounts): number => prod(Object.values(cubes));
+
+console.log(`Part 2: ${sum(games.map(minimumCubes).map(cubePower))}`);
