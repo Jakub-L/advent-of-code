@@ -5,19 +5,6 @@ type Element = { number: number; isPart: boolean; adjacentGears: Set<string> };
 
 const input: string[][] = readFile(__dirname + "/input.txt", ["\n", ""]) as string[][];
 
-const test = `467..114..
-...*......
-..35..633.
-......#...
-617*......
-.....+.58.
-..592.....
-......755.
-...$.*....
-.664.598..`
-  .split("\n")
-  .map(line => line.split(""));
-
 // UTILS
 /**
  * Checks whether a set of coordinates is adjacent (including diagonals) to a symbol.
@@ -85,6 +72,7 @@ const parseSchematic = (schematic: string[][]): Element[] => {
  * @returns {number[]} An array of gear ratios.
  */
 const getGearRatios = (elements: Element[]): number[] => {
+  // First we invert the list of gears adjacent to elements, to find the elements adjacent to each gear
   const partsAdjacentToGears: { [key: string]: number[] } = {};
   for (const element of elements) {
     if (element.adjacentGears.size > 0) {
@@ -99,11 +87,6 @@ const getGearRatios = (elements: Element[]): number[] => {
 };
 
 // RESULTS
-console.log(
-  `Part 1: ${sum(
-    parseSchematic(input)
-      .filter(({ isPart }) => isPart)
-      .map(({ number }) => number)
-  )}`
-);
-console.log(`Part 2: ${sum(getGearRatios(parseSchematic(input)))}`);
+const schematic = parseSchematic(input);
+console.log(`Part 1: ${sum(schematic.filter(element => element.isPart).map(part => part.number))}`);
+console.log(`Part 2: ${sum(getGearRatios(schematic))}`);
