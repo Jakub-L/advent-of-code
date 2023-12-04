@@ -4,6 +4,7 @@ import { sum } from "@jakub-l/aoc-lib/math";
 type Card = {
   winningNumbers: Set<number>;
   drawnNumbers: Set<number>;
+  matches: number;
   points: number;
 };
 
@@ -25,11 +26,10 @@ const intersection = <T>(setA: Set<T>, setB: Set<T>): Set<T> => {
   return result;
 };
 
-const calculatePoints = (winningNumbers: Set<number>, drawnNumbers: Set<number>): number => {
-  const overlap = intersection(winningNumbers, drawnNumbers);
-  if (overlap.size === 0) return 0;
-  if (overlap.size === 1) return 1;
-  return 2 ** (overlap.size - 1);
+const calculatePoints = (matches: number): number => {
+  if (matches === 0) return 0;
+  if (matches === 1) return 1;
+  return 2 ** (matches - 1);
 };
 
 const parseCard = (card: string) => {
@@ -37,8 +37,20 @@ const parseCard = (card: string) => {
   const [winningStrings, drawnStrings] = numbers.split(" | ").map(s => s.trim().split(/\s+/));
   const winningNumbers = new Set(winningStrings.map(Number));
   const drawnNumbers = new Set(drawnStrings.map(Number));
-  const points = calculatePoints(winningNumbers, drawnNumbers);
-  return { winningNumbers, drawnNumbers, points };
+  const matches = intersection(winningNumbers, drawnNumbers).size;
+  const points = calculatePoints(matches);
+  return { winningNumbers, drawnNumbers, matches, points };
 };
 
-console.log(`Part 1: ${sum(input.map(parseCard).map(card => card.points))}`)
+const processCards = (cards: Card[]): number => {
+  const winCounts: { [index: number]: number } = {};
+  for (let i = 0; i < cards.length; i++) {
+    for (let j = 1; j <= cards[i].matches; j++) {
+      winCounts[i + j] = (winCounts[i + j] ?? 0) + (winCounts[i] ?? 0) + 1;
+    }
+  }
+  return sum(Object.values(winCounts)) + cards.length;
+};
+
+console.log(`Part 1: ${sum(input.map(parseCard).map(card => card.points))}`);
+console.log(`Part 2: ${processCards(input.map(parseCard))}`);
