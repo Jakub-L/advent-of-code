@@ -2,6 +2,12 @@ import { readFile } from "@jakub-l/aoc-lib/input-parsing";
 
 type Map = { destination: number; source: number; length: number };
 type SeedPair = { start: number; length: number };
+type PotentialPairMinimum = {
+  intervalStart: number;
+  minimumCandidateSeed: number;
+  minimumCandidateLocation: number;
+  intervalLength: number;
+};
 type Category = Map[];
 
 const input: string[] = readFile(__dirname + "/input.txt", ["\n\n"]) as string[];
@@ -28,6 +34,12 @@ const seedPairs = parseSeedPairs(rawSeeds);
 const categories = rawCategories.map(parseCategory);
 
 // UTILS
+/**
+ * Processes a seed through categories to find its final location
+ * @param {number} seed - The initial seed
+ * @param {Category[]} categories - The categories containing mappings
+ * @returns {number} The final location of the seed
+ */
 const getFinalLocation = (seed: number, categories: Category[]): number => {
   let currentLocation = seed;
   for (const category of categories) {
@@ -42,6 +54,12 @@ const getFinalLocation = (seed: number, categories: Category[]): number => {
   return currentLocation;
 };
 
+/**
+ * Processes all seeds to find their final locations
+ * @param {number[]} seeds - Array of initial seeds
+ * @param {Category[]} categories - The categories containing mappings
+ * @returns {number[]} The final location of each seed
+ */
 const applyMapsToSeeds = (seeds: number[], categories: Category[]): number[] => {
   const finalLocations: number[] = [];
   for (const seed of seeds) {
@@ -50,39 +68,54 @@ const applyMapsToSeeds = (seeds: number[], categories: Category[]): number[] => 
   return finalLocations;
 };
 
+/**
+ * Finds the minimum location assuming seed ranges are used
+ * @param {SeedPair[]} seedPairs - Array of seed pairs
+ * @param {Category[]} categories - The categories containing mappings
+ * @returns {number} The minimum location
+ */
 const findMinimumLocation = (seedPairs: SeedPair[], categories: Category[]): number => {
   // First step over in interval of 100s to find likely minimum
-  const pairMinimums = [];
+  const seedPairMiniums: PotentialPairMinimum[] = [];
   for (const seedPair of seedPairs) {
-    let minimumLocation = Infinity;
-    let minimumSeed = seedPair.start;
+    let minimumCandidateLocation = Infinity;
+    let minimumCandidateSeed = seedPair.start;
     for (let i = seedPair.start; i < seedPair.start + seedPair.length; i += 100) {
       const finalLocation = getFinalLocation(i, categories);
-      if (finalLocation < minimumLocation) {
-        minimumLocation = finalLocation;
-        minimumSeed = i;
+      if (finalLocation < minimumCandidateLocation) {
+        minimumCandidateLocation = finalLocation;
+        minimumCandidateSeed = i;
       }
     }
-    pairMinimums.push({ start: seedPair.start, minimumSeed, minimumLocation, length: seedPair.length });
+    seedPairMiniums.push({
+      intervalStart: seedPair.start,
+      minimumCandidateSeed,
+      minimumCandidateLocation,
+      intervalLength: seedPair.length
+    });
   }
 
-  console.log(pairMinimums);
-
-  // Find the minimum of the 100-step minimums
+  // Find the pair with the lowest 100-interval minimum
   let likelyMinimumLocation = Infinity;
-  let pairOfInterest = { start: 0, minimumSeed: 0, minimumLocation: 0, length: 0 };
-  for (const pair of pairMinimums) {
-    if (pair.minimumLocation < likelyMinimumLocation) {
-      likelyMinimumLocation = pair.minimumLocation;
+  let pairOfInterest: PotentialPairMinimum = {
+    intervalStart: 0,
+    minimumCandidateSeed: 0,
+    minimumCandidateLocation: 0,
+    intervalLength: 0
+  };
+  for (const pair of seedPairMiniums) {
+    if (pair.minimumCandidateLocation < likelyMinimumLocation) {
+      likelyMinimumLocation = pair.minimumCandidateLocation;
       pairOfInterest = pair;
     }
   }
 
-  // Search around the likely minimum to find the actual minimum
+  // Search around the likely minimum seed to find the actual minimum
+  const { minimumCandidateSeed, intervalStart, intervalLength } = pairOfInterest;
   let minimumLocation = Infinity;
   let searchBand = 1_000_000;
-  let lowerBound = Math.max(pairOfInterest.minimumSeed - searchBand, pairOfInterest.start);
-  let upperBound = Math.min(pairOfInterest.minimumSeed + searchBand, pairOfInterest.start + pairOfInterest.length);
+  let lowerBound = Math.max(minimumCandidateSeed - searchBand, intervalStart);
+  let upperBound = Math.min(minimumCandidateSeed + searchBand, intervalStart + intervalLength);
   for (let i = lowerBound; i < upperBound; i++) {
     const finalLocation = getFinalLocation(i, categories);
     if (finalLocation < minimumLocation) {
