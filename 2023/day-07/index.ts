@@ -3,14 +3,6 @@ import { sum } from "@jakub-l/aoc-lib/math";
 
 const input: string[] = readFile(__dirname + "/input.txt", ["\n", " "]) as string[];
 
-const test = `32T3K 765
-T55J5 684
-KK677 28
-KTJJT 220
-QQQJA 483`
-  .split("\n")
-  .map(line => line.split(" "));
-
 // UTILS
 enum HandType {
   highCard,
@@ -53,24 +45,46 @@ const cardLookup = (useJokers: boolean): { [key: string]: CardType } => ({
   A: CardType.ace
 });
 
-class Card {
+/**
+ * A hand of cards
+ * @class
+ */
+class Hand {
+  /** The bet amount */
   bet: number;
+  /** The cards in the hand */
   cards: CardType[] = [];
+  /** The type of hand */
   handType: HandType;
+  /** Whether to use jokers as wildcards */
   private _useJokers: boolean;
+  /** The number of cards of each type in the hand */
+  private _cardCounts: Map<CardType, number> = new Map();
 
+  /**
+   * Creates a new hand
+   * @param {string} cardString - The string representing the cards in the hand
+   * @param {string} betString - The string representing the bet amount
+   * @param {boolean} [useJokers=false] - Whether to use jokers as wildcards
+   */
   constructor(cardString: string, betString: string, useJokers: boolean = false) {
-    this._useJokers = useJokers;
     this.bet = Number(betString);
     this.cards = cardString.split("").map(card => cardLookup(useJokers)[card]);
-    this.handType = this._getHandType(cardString);
+    this._cardCounts = this.cards.reduce((acc, card) => acc.set(card, (acc.get(card) || 0) + 1), new Map());
+    this._useJokers = useJokers;
+    this.handType = this._getHandType();
   }
 
-  private _getHandType(cardString: string): HandType {
-    const counts = cardString
-      .split("")
-      .reduce((counts, card) => ({ ...counts, [card]: (counts[card] ?? 0) + 1 }), {} as { [index: string]: number });
-    const [topCount, secondCount] = Object.values(counts).sort((a, b) => b - a);
+  /**
+   * Evaluates the type of the hand
+   * @returns {HandType} The type of hand
+   */
+  private _getHandType(): HandType {
+    const jokerCount = this._cardCounts.get(CardType.joker) ?? 0;
+    if (this._useJokers) this._cardCounts.delete(CardType.joker);
+    const orderedCounts = Array.from(this._cardCounts.values()).sort((a, b) => b - a);
+    const topCount = (orderedCounts[0] ?? 0) + jokerCount;
+    const secondCount = orderedCounts[1] ?? 0;
     if (topCount === 5) return HandType.fiveOfAKind;
     if (topCount === 4) return HandType.fourOfAKind;
     if (topCount === 3 && secondCount === 2) return HandType.fullHouse;
@@ -81,7 +95,13 @@ class Card {
   }
 }
 
-const compareCards = (a: Card, b: Card): number => {
+/**
+ * Compares two cards, first by hand type then by card values in order
+ * @param {Hand} a - First card
+ * @param {Hand} b - Second card
+ * @returns {number} Comparator value (-1, 0 or 1)
+ */
+const compareCards = (a: Hand, b: Hand): number => {
   if (a.handType > b.handType) return 1;
   if (a.handType < b.handType) return -1;
   for (let i = 0; i < a.cards.length; i++) {
@@ -93,11 +113,20 @@ const compareCards = (a: Card, b: Card): number => {
 
 // PART 1
 const totalWinningsWithoutJokers = sum(
-  test
-    .map(([cards, bet]) => new Card(cards, bet))
+  input
+    .map(([cards, bet]) => new Hand(cards, bet))
+    .sort(compareCards)
+    .map((card, i) => card.bet * (i + 1))
+);
+
+// PART 2
+const totalWinningsWithJokers = sum(
+  input
+    .map(([cards, bet]) => new Hand(cards, bet, true))
     .sort(compareCards)
     .map((card, i) => card.bet * (i + 1))
 );
 
 // RESULTS
 console.log(`Part 1: ${totalWinningsWithoutJokers}`);
+console.log(`Part 2: ${totalWinningsWithJokers}`);
