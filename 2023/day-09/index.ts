@@ -24,7 +24,7 @@ const findDifferences = (numbers: number[]): number[][] => {
   return allDifferences;
 };
 
-const extrapolate = (numbers: number[]): number => {
+const extrapolateForward = (numbers: number[]): number => {
   const differences = findDifferences(numbers);
   let nextNumber = 0;
   for (let i = differences.length - 2; i >= 0; i--) {
@@ -33,4 +33,16 @@ const extrapolate = (numbers: number[]): number => {
   return nextNumber;
 };
 
-console.log(sum(input.map(extrapolate)));
+const extrapolateBackward = (numbers: number[]): number => {
+  const differences = findDifferences(numbers);
+  let previousNumbers = 0;
+  for (let i = differences.length - 2; i >= 0; i--) {
+    previousNumbers = (differences[i].at(0) ?? 0) - previousNumbers;
+  }
+  return previousNumbers;
+};
+
+// console.time("part1");
+// console.log(sum(input.map(extrapolateForward)));
+// console.timeEnd("part1");
+console.log(sum(input.map(extrapolateBackward)));
