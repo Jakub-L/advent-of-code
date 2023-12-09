@@ -3,12 +3,17 @@ import { sum } from "@jakub-l/aoc-lib/math";
 
 const input = readFile(__dirname + "/input.txt", ["\n", " "], x => Number(x)) as unknown as number[][];
 
-// const input = `0 3 6 9 12 15
-// 1 3 6 10 15 21
-// 10 13 16 21 30 45`
-//   .split("\n")
-//   .map(line => line.split(" ").map(n => parseInt(n)));
-
+// UTILS
+/**
+ * Finds the differences between consecutive numbers in the input array. This is done
+ * repeatedly until the differences are all 0.
+ *
+ * Example:
+ *    [1, 2, 3, 4] -> [1, 1, 1] -> [0, 0]
+ *
+ * @param {number[]} numbers - The input array of numbers
+ * @returns {number[][]} An array of arrays of differences
+ */
 const findDifferences = (numbers: number[]): number[][] => {
   const allDifferences = [numbers];
   let previousNumbers = numbers ?? [];
@@ -20,29 +25,34 @@ const findDifferences = (numbers: number[]): number[][] => {
     allDifferences.push(differences);
     previousNumbers = differences;
   }
-
   return allDifferences;
 };
 
-const extrapolateForward = (numbers: number[]): number => {
-  const differences = findDifferences(numbers);
-  let nextNumber = 0;
+/**
+ * Extrapolates the next number in the sequence based on the differences.
+ * 
+ * Combines the last number in the differences array with the last number in the
+ * difference array above it. For example, if the differences are:
+ *    [1, 2, 3, 4] -> [1, 1, 1] -> [0, 0]
+ * Then the extrapolated number is:
+ *    (0 + 1) + 4 = 5
+ *
+ * @param {number[][]} differences - The array of differences
+ * @param {boolean} [backwards=false] - Whether to extrapolate backwards. Defaults to false.
+ * @returns {number} The extrapolated number
+ */
+const extrapolate = (differences: number[][], backwards: boolean = false): number => {
+  const inspectionIndex = backwards ? -1 : 0;
+  let number = 0;
   for (let i = differences.length - 2; i >= 0; i--) {
-    nextNumber += differences[i].at(-1) ?? 0;
+    number = (differences[i].at(inspectionIndex) ?? 0) + (backwards ? -1 : 1) * number;
   }
-  return nextNumber;
+  return number;
 };
 
-const extrapolateBackward = (numbers: number[]): number => {
-  const differences = findDifferences(numbers);
-  let previousNumbers = 0;
-  for (let i = differences.length - 2; i >= 0; i--) {
-    previousNumbers = (differences[i].at(0) ?? 0) - previousNumbers;
-  }
-  return previousNumbers;
-};
+// INPUT PROCESSING
+const differences = input.map(findDifferences);
 
-// console.time("part1");
-// console.log(sum(input.map(extrapolateForward)));
-// console.timeEnd("part1");
-console.log(sum(input.map(extrapolateBackward)));
+// RESULTS
+console.log(`Part 1: ${sum(differences.map(d => extrapolate(d)))}`);
+console.log(`Part 2: ${sum(differences.map(d => extrapolate(d, true)))}`);
