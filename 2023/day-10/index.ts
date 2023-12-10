@@ -3,14 +3,6 @@ import { Queue } from "@jakub-l/aoc-lib/data-structures";
 
 const input = readFile(__dirname + "/input.txt", ["\n", ""]) as string[][];
 
-// const input = `..F7.
-// .FJ|.
-// SJ.L7
-// |F--J
-// LJ...`
-//   .split("\n")
-//   .map(line => line.split(""));
-
 // UTILS
 // prettier-ignore
 const pipeConnections: Record<string, number[][]> = {
@@ -21,7 +13,7 @@ const pipeConnections: Record<string, number[][]> = {
   "7": [[0, 1], [-1, 0]],
   "F": [[0, 1], [1, 0]],
   "S": []
-}
+};
 
 /** A single pipe in a network */
 class Pipe {
@@ -40,7 +32,7 @@ class Pipe {
    * @param {number} column - Column of the pipe on the map
    * @param {number} row - Row of the pipe on the map
    */
-  constructor(symbol: string, column: number, row: number) {
+  constructor(public symbol: string, column: number, row: number) {
     this._pos = `${column}, ${row}`;
     for (const [dC, dR] of pipeConnections[symbol]) {
       this._connectedPositions.add(`${column + dC}, ${row + dR}`);
@@ -80,6 +72,7 @@ class Network {
   private _start: [number, number] = [-1, -1];
   private _width: number;
   private _height: number;
+  private _enclosedArea: number = -1;
 
   /**
    * Creates a new network
@@ -96,16 +89,16 @@ class Network {
       }
     }
     for (const pipe of this.pipes.values()) pipe.mapConnections(this.pipes);
-    this._findStartShape();
+    this._createStartPipe();
     this._calculateDistance();
   }
 
   /**
-   * Finds the starting pipe and adds it to the map. Checks the possible connections
+   * Defines the starting pipe and adds it to the map. Checks the possible connections
    * of the starting pipe by seeing which of the neighbouring positions connect back
    * to the starting position.
    */
-  private _findStartShape() {
+  private _createStartPipe() {
     const [startColumn, startRow] = this._start;
     const startPos = `${startColumn}, ${startRow}`;
     const startPipe = new Pipe("S", startColumn, startRow);
@@ -136,6 +129,43 @@ class Network {
     }
   }
 
+  /**
+   * Finds the number of grid points enclosed by the main pipe loop.
+   *
+   * This takes advantage of a property of polygons - if we shoot a ray in any direction
+   * and count the number of times it intersects with the polygon, if the number is odd,
+   * the point is inside the polygon. If it is even, the point is outside the polygon.
+   *
+   * We shoot a ray diagonally from each grid point. The ray is shot diagonally because
+   * if it was shot horizontally or vertically, it might run along a pipe, which would
+   * make it more difficult to deal with.
+   *
+   * We ignore pipes that are not connected to the starting pipe (distanceFromStart < 0),
+   * as well as L- and 7-pipes, which count as two intersections (for the purpose of
+   * checking if the number of intersections is odd or even, they have no impact).
+   */
+  private _findEnclosedArea() {
+    let enclosedArea = 0;
+    for (let row = 0; row < this._height; row++) {
+      for (let column = 0; column < this._width; column++) {
+        const pos = `${column}, ${row}`;
+        // If the inspected point is part of the main loop, ignore it
+        if (this.pipes.has(pos) && (this.pipes.get(pos) as Pipe).distanceFromStart > 0) continue;
+        let [rayCol, rayRow, loopIntersections] = [column, row, 0];
+        while (rayCol < this._width && rayRow < this._height) {
+          [rayCol, rayRow] = [rayCol + 1, rayRow + 1];
+          const rayPos = `${rayCol}, ${rayRow}`;
+          if (this.pipes.has(rayPos)) {
+            const { symbol, distanceFromStart } = this.pipes.get(rayPos) as Pipe;
+            if (symbol !== "L" && symbol !== "7" && distanceFromStart >= 0) loopIntersections++;
+          }
+        }
+        if (loopIntersections % 2 === 1) enclosedArea += 1;
+      }
+    }
+    this._enclosedArea = enclosedArea;
+  }
+
   /** Maximum distance from the start of any pipe connected to the starting pipe */
   get maxDistance(): number {
     let maxDistance = 0;
@@ -144,7 +174,15 @@ class Network {
     }
     return maxDistance;
   }
+
+  /** Number of grid points enclosed by the main loop */
+  get enclosedArea(): number {
+    if (this._enclosedArea === -1) this._findEnclosedArea();
+    return this._enclosedArea;
+  }
 }
 
+// RESULTS
 const network = new Network(input);
-console.log(network.maxDistance);
+console.log(`Part 1: ${network.maxDistance}`);
+console.log(`Part 2: ${network.enclosedArea}`);
