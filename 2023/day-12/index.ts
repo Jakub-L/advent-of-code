@@ -1,26 +1,25 @@
 import { readFile } from "@jakub-l/aoc-lib/input-parsing";
 import { sum } from "@jakub-l/aoc-lib/math";
 
-const parseLine = ([pattern, counts]: string[]) => ({
-  pattern,
-  counts: counts.split(",").map(Number)
-});
+type Record = { pattern: string; counts: number[] };
 
-const input = (readFile(`${__dirname}/input.txt`, ["\n", " "]) as string[][]).map(parseLine);
+const parseLine = ([pattern, counts]: string[]): Record => ({ pattern, counts: counts.split(",").map(Number) });
 
-// const input = `???.### 1,1,3
-// .??..??...?##. 1,1,3
-// ?#?#?#?#?#?#?#? 1,3,1,6
-// ????.#...#... 4,1,1
-// ????.######..#####. 1,6,5
-// ?###???????? 3,2,1`
-//   .split("\n")
-//   .map(line => line.split(" "))
-// .map(parseLine);
+// UTILS
+const memoize = <A extends unknown[], R>(func: (...args: A) => R): ((...args: A) => R) => {
+  const store = new Map<string, R>();
 
-const countPossibilites = (pattern: string, counts: number[]): number => {
-  // CHECKS
-  // Check 1: No pattern left requires no counts for a match
+  return (...args: A): R => {
+    const lookup = JSON.stringify(args);
+    if (store.has(lookup)) return store.get(lookup)!;
+    const result = func(...args);
+    store.set(lookup, result);
+    return result;
+  };
+};
+
+const countPossibilites = memoize((pattern: string, counts: number[]): number => {
+  // No pattern left requires no counts for a match
   if (pattern.length === 0) {
     if (counts.length === 0) return 1;
     return 0;
@@ -29,11 +28,10 @@ const countPossibilites = (pattern: string, counts: number[]): number => {
   // Check 2: No counts left, but the pattern has to have no hashes for a match
   if (counts.length === 0) return /^[^#]+$/.test(pattern) ? 1 : 0;
 
-  // Check 3: We have to have enough pattern for the sum of all counts + one
+  // We have to have enough pattern for the sum of all counts + one
   // dot per gap between counts
   if (pattern.length < sum(counts) + (counts.length - 1)) return 0;
 
-  // RECURSIVE CALCULATION
   // A dot has no impact
   if (pattern[0] === ".") return countPossibilites(pattern.slice(1), counts);
 
@@ -58,13 +56,24 @@ const countPossibilites = (pattern: string, counts: number[]): number => {
 
   // A question mark is a wildcard, so we have to check both possibilities
   return countPossibilites(`#${pattern.slice(1)}`, counts) + countPossibilites(`.${pattern.slice(1)}`, counts);
-};
+});
 
-console.log(
-  sum(
-    input.map(({ pattern, counts }) => {
-      console.log(pattern);
-      return countPossibilites(pattern, counts);
-    })
-  )
-);
+/**
+ * Unfolds a record by multiplying the pattern and counts by a given factor. The pattern
+ * gets repeated N-fold and joined by question marks.
+ * @param {Record} record - The record to unfold
+ * @param {number} [multiple=5] - The factor to multiply the pattern and counts by 
+ * @returns {Record} The unfolded record
+ */
+const unfold = (record: Record, multiple: number = 5): Record => ({
+  pattern: Array(multiple).fill(record.pattern).join("?"),
+  counts: Array(multiple).fill(record.counts).flat()
+});
+
+// INPUT PARSING
+const input = (readFile(`${__dirname}/input.txt`, ["\n", " "]) as string[][]).map(parseLine);
+const unfoldedInput = input.map(record => unfold(record));
+
+// RESULTS
+console.log(`Part 1: ${sum(input.map(({ pattern, counts }) => countPossibilites(pattern, counts)))}`);
+console.log(`Part 2: ${sum(unfoldedInput.map(({ pattern, counts }) => countPossibilites(pattern, counts)))}`);
