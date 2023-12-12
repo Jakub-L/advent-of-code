@@ -2,10 +2,16 @@ import { readFile } from "@jakub-l/aoc-lib/input-parsing";
 import { sum } from "@jakub-l/aoc-lib/math";
 
 type Record = { pattern: string; counts: number[] };
-
 const parseLine = ([pattern, counts]: string[]): Record => ({ pattern, counts: counts.split(",").map(Number) });
 
 // UTILS
+/**
+ * Memoizes a function.
+ * @template A - Arguments
+ * @template R - Result
+ * @param {(A) => R} func - Function to memoize. Must take serializable arguments.
+ * @returns {(A) => R} Memoized function
+ */
 const memoize = <A extends unknown[], R>(func: (...args: A) => R): ((...args: A) => R) => {
   const store = new Map<string, R>();
 
@@ -18,6 +24,12 @@ const memoize = <A extends unknown[], R>(func: (...args: A) => R): ((...args: A)
   };
 };
 
+/**
+ * Counts the number of possible matches for a given pattern and counts.
+ * @param {string} pattern - The pattern to match
+ * @param {number[]} counts - The counts to match
+ * @returns {number} The number of possible matches
+ */
 const countPossibilites = memoize((pattern: string, counts: number[]): number => {
   // No pattern left requires no counts for a match
   if (pattern.length === 0) {
@@ -62,7 +74,7 @@ const countPossibilites = memoize((pattern: string, counts: number[]): number =>
  * Unfolds a record by multiplying the pattern and counts by a given factor. The pattern
  * gets repeated N-fold and joined by question marks.
  * @param {Record} record - The record to unfold
- * @param {number} [multiple=5] - The factor to multiply the pattern and counts by 
+ * @param {number} [multiple=5] - The factor to multiply the pattern and counts by
  * @returns {Record} The unfolded record
  */
 const unfold = (record: Record, multiple: number = 5): Record => ({
