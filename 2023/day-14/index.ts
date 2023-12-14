@@ -41,8 +41,34 @@ class Platform {
     this._layout = newLayout;
   }
 
+  cycle(target: number) {
+    const seenArrangements = new Map<string, number>();
+    const loads = new Map<number, number>();
+    for (let n = 1; n <= target; n++) {
+      for (let i = 0; i < 4; i++) {
+        this.rollNorth();
+        this._rotateCW();
+      }
+      loads.set(n, this.totalLoad);
+      const arrangement = this.toString();
+      if (seenArrangements.has(arrangement)) {
+        const previous = seenArrangements.get(arrangement)!;
+        const loopLength = n - previous;
+        const targetEquivalent = ((target - n) % loopLength) + previous;
+        console.log(loads.get(targetEquivalent));
+        return;
+      } else {
+        seenArrangements.set(arrangement, n);
+      }
+    }
+  }
+
   toString(): string {
     return this._layout.map(row => row.join("")).join("\n");
+  }
+
+  private _rotateCW() {
+    this._layout = this._layout[0].map((_, col) => this._layout.map(row => row[col]).reverse());
   }
 
   get totalLoad(): number {
@@ -51,5 +77,6 @@ class Platform {
 }
 
 const p = new Platform(input);
-p.rollNorth();
-console.log(p.totalLoad);
+// p.rollNorth();
+// console.log(p.totalLoad);
+p.cycle(1_000_000_000);
