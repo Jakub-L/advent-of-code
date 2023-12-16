@@ -73,8 +73,6 @@ class Contraption {
   private _layout: string[][] = [];
   private _width: number;
   private _height: number;
-  private _seenBeams: Set<string> = new Set(["0,0,0"]);
-  private _energized: Set<string> = new Set(["0,0"]);
 
   constructor(layout: string[][]) {
     this._layout = layout;
@@ -82,21 +80,28 @@ class Contraption {
     this._height = layout.length;
   }
 
-  bounce() {
-    let beams: Beam[] = this._getOutputBeams(new Beam());
+  maxEdgeEnergizing(): number {
+    const bounces = this._getEdgeStarts().map(start => this.bounce(start));
+    return Math.max(...bounces);
+  }
+
+  bounce(startBeam: Beam): number {
+    const seenBeams: Set<string> = new Set([startBeam.id]);
+    const energized: Set<string> = new Set([startBeam.pos]);
+    let beams: Beam[] = this._getOutputBeams(startBeam);
     while (beams.length) {
       beams = beams
         .map(beam => beam.step())
         .filter(beam => this._isInBounds(beam))
         .map(beam => this._getOutputBeams(beam))
         .flat()
-        .filter(beam => !this._seenBeams.has(beam.id));
+        .filter(beam => !seenBeams.has(beam.id));
       for (const beam of beams) {
-        this._seenBeams.add(beam.id);
-        this._energized.add(beam.pos);
+        seenBeams.add(beam.id);
+        energized.add(beam.pos);
       }
     }
-    return this._energized.size;
+    return energized.size;
   }
 
   private _getOutputBeams(beam: Beam): Beam[] {
@@ -108,6 +113,23 @@ class Contraption {
   private _isInBounds(beam: Beam): boolean {
     const { row, col } = beam;
     return row >= 0 && row < this._height && col >= 0 && col < this._width;
+  }
+
+  private _getEdgeStarts(): Beam[] {
+    const starts: Beam[] = [];
+    for (let col = 0; col < this._width; col++) {
+      starts.push(new Beam({ row: 0, col, direction: Direction.Down }));
+    }
+    for (let col = 0; col < this._width; col++) {
+      starts.push(new Beam({ row: this._height - 1, col, direction: Direction.Up }));
+    }
+    for (let row = 0; row < this._height; row++) {
+      starts.push(new Beam({ row, col: 0, direction: Direction.Right }));
+    }
+    for (let row = 0; row < this._height; row++) {
+      starts.push(new Beam({ row, col: this._width - 1, direction: Direction.Left }));
+    }
+    return starts;
   }
 
   private _getOutDirections(char: string, incomingDirection: Direction): Direction[] {
@@ -149,6 +171,9 @@ class Contraption {
 // INPUT PROCESSING
 const input = readFile(__dirname + "/input.txt", ["\n", ""]) as string[][];
 
-console.time("part1")
-console.log(new Contraption(input).bounce());
-console.timeEnd("part1")
+console.time("part1");
+console.log(new Contraption(input).bounce(new Beam()));
+console.timeEnd("part1");
+console.time("part2");
+console.log(new Contraption(input).maxEdgeEnergizing());
+console.timeEnd("part2");
