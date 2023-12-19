@@ -20,18 +20,18 @@ import { readFile } from "@jakub-l/aoc-lib/input-parsing";
 const input = readFile(__dirname + "/input.txt", ["\n", " "]) as string[][];
 
 type Direction = "U" | "D" | "L" | "R";
-type Instruction = { dir: Direction; dist: number; color: string };
+type Instruction = { dir: Direction; dist: number };
+const dirDelta = { U: [0, 1], D: [0, -1], L: [-1, 0], R: [1, 0] };
 
-const dirDelta = {
-  U: [0, 1],
-  D: [0, -1],
-  L: [-1, 0],
-  R: [1, 0]
+const parseRegularInstruction = (rawInstruction: string[]): Instruction => {
+  const [dir, dist] = rawInstruction;
+  return { dir: dir as Direction, dist: Number(dist) };
 };
 
-const parseInstructionString = (rawInstruction: string[]): Instruction => {
-  const [dir, dist, color] = rawInstruction;
-  return { dir: dir as Direction, dist: Number(dist), color };
+const parseHexInstruction = (rawInstruction: string[]): any => {
+  const dirs = ["R", "D", "L", "U"];
+  const hex = rawInstruction.at(-1)!.replaceAll(/\(|\)|#/g, "");
+  return { dir: dirs[parseInt(hex.slice(-1))], dist: parseInt(hex.slice(0, -1), 16) };
 };
 
 class Lagoon {
@@ -39,7 +39,7 @@ class Lagoon {
   private _shoelaceArea: number = 0;
   private _perimeter: number = 0;
 
-  dig(instructions: Instruction[]) {
+  dig(instructions: Instruction[]): Lagoon {
     this._points = [];
     let [x, y] = [0, 0];
     for (const { dir, dist } of instructions) {
@@ -49,6 +49,7 @@ class Lagoon {
     }
     this._shoelaceArea = this._getShoelaceArea();
     this._perimeter = this._getPerimeter();
+    return this;
   }
 
   private _getShoelaceArea(): number {
@@ -92,7 +93,10 @@ class Lagoon {
   }
 }
 
-const instructions = input.map(parseInstructionString);
+const instructions = input.map(parseRegularInstruction);
+const hexInstructions = input.map(parseHexInstruction);
 const lagoon = new Lagoon();
 lagoon.dig(instructions);
+console.log(lagoon.lagoonSize);
+lagoon.dig(hexInstructions);
 console.log(lagoon.lagoonSize);
