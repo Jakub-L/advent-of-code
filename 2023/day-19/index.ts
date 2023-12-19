@@ -1,5 +1,5 @@
 import { readFile } from "@jakub-l/aoc-lib/input-parsing";
-import { sum } from "@jakub-l/aoc-lib/math";
+import { prod, sum } from "@jakub-l/aoc-lib/math";
 
 const [workflowStrings, partStrings] = readFile(__dirname + "/input.txt", ["\n\n", "\n"]) as string[][];
 
@@ -25,6 +25,7 @@ const [workflowStrings, partStrings] = readFile(__dirname + "/input.txt", ["\n\n
 
 type Field = "x" | "m" | "a" | "s";
 type Part = { x: number; m: number; a: number; s: number; status: "A" | "R" | null };
+type Range = { x: [number, number]; m: [number, number]; a: [number, number]; s: [number, number] };
 type Condition = { field: Field; operator: string; value: number; target: string };
 type Workflow = { name: string; conditions?: Condition[]; fallback?: string };
 
@@ -38,7 +39,7 @@ const getPartsRatings = (parts: Part[]): number => {
 };
 
 class Process {
-  private _workflows: Map<string, Workflow> = new Map();
+  _workflows: Map<string, Workflow> = new Map();
 
   constructor(workflowStrings: string[]) {
     for (const workflowString of workflowStrings) {
@@ -74,6 +75,26 @@ class Process {
     return part;
   };
 
+  getPossiblePasses = (workflow: Workflow, range: Range): number => {
+    const { conditions = [], fallback = "R" } = workflow;
+    let sum = 0;
+    for (const condition of conditions) {
+      const [passingRange, failingRange] = this._applyConditionToRange(condition, range);
+      if (condition.target === "A") sum += this._countInRange(passingRange);
+      else if (condition.target !== "R") {
+        const targetWorkflow = this._workflows.get(condition.target)!;
+        sum += this.getPossiblePasses(targetWorkflow, passingRange);
+      }
+      range = failingRange;
+    }
+    if (workflow.fallback === "A") sum += this._countInRange(range);
+    else if (workflow.fallback !== "R") {
+      const targetWorkflow = this._workflows.get(fallback!)!;
+      sum += this.getPossiblePasses(targetWorkflow, range);
+    }
+    return sum;
+  };
+
   private _parseCondition = (condition: string): Condition => {
     const [field, operator, value, _, target] = condition.split(/(<|>|:)/);
     return { field: field as Field, operator, value: Number(value), target };
@@ -84,9 +105,31 @@ class Process {
     if (operator === "<") return part[field] < value;
     return part[field] > value;
   };
+
+  _applyConditionToRange = (condition: Condition, range: Range): Range[] => {
+    const { field, operator, value } = condition;
+    const [min, max] = range[field];
+    let passingRange: Range;
+    let failingRange: Range;
+    if (operator === "<") {
+      passingRange = { ...range, [field]: [min, value] };
+      failingRange = { ...range, [field]: [value, max] };
+    } else {
+      passingRange = { ...range, [field]: [value + 1, max] };
+      failingRange = { ...range, [field]: [min, value + 1] };
+    }
+    return [passingRange, failingRange];
+  };
+
+  _countInRange = (range: Range): number => {
+    return prod(Object.values(range).map(([min, max]) => Math.max(0, max - min)));
+  };
 }
 
 const parts = partStrings.map(parsePart);
 const p = new Process(workflowStrings);
-// console.log(p);
-console.log(getPartsRatings(parts.map(p.processPart)));
+const r: Range = { x: [1, 4001], m: [1, 4001], a: [1, 4001], s: [1, 4001] };
+const n = p.getPossiblePasses(p._workflows.get("in")!, r);
+console.log(n);
+// const c: Condition = { field: "x", operator: ">", value: 4000, target: "R" };
+// console.log(getPartsRatings(parts.map(p.processPart)));
