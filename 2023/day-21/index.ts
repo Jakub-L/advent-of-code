@@ -1,19 +1,5 @@
 import { readFile } from "@jakub-l/aoc-lib/input-parsing";
 
-// const input = `...........
-// .....###.#.
-// .###.##..#.
-// ..#.#...#..
-// ....#.#....
-// .##..S####.
-// .##..#...#.
-// .......##..
-// .##.#.####.
-// .##..##.##.
-// ...........`
-//   .split("\n")
-//   .map(line => line.split(""));
-
 // UTILS
 type Coords = [number, number];
 const neighbours = [
@@ -23,46 +9,102 @@ const neighbours = [
   [-1, 0]
 ];
 
+/** An infnite garden to step through */
 class Garden {
-  private _height: number;
-  private _width: number;
+  /** The size of the grid. Assumes square grid */
+  private _size: number;
+  /** The starting position */
   private _start: Coords = [-1, -1];
-  private _stones: Map<string, Coords> = new Map();
+  /** The layout of the garden */
+  private _layout: string[][];
 
+  /**
+   * Creates a new Garden instance.
+   * @param {string[][]} layout - The layout of the garden
+   */
   constructor(layout: string[][]) {
-    this._height = layout.length;
-    this._width = layout[0].length;
-    for (let y = 0; y < this._height; y++) {
-      for (let x = 0; x < this._width; x++) {
-        if (layout[y][x] === "S") this._start = [x, y];
-        else if (layout[y][x] === "#") this._stones.set(`${x},${y}`, [x, y]);
+    this._size = layout.length;
+    this._layout = layout;
+    for (let row = 0; row < this._size; row++) {
+      for (let col = 0; col < this._size; col++) {
+        if (layout[row][col] === "S") this._start = [row, col];
       }
     }
   }
 
-  step(n: number = 1) {
-    const [xs, ys] = this._start;
-    const stepHistory: Map<string, Coords>[] = [new Map([[`${xs},${ys}`, [xs, ys]]])];
+  /**
+   * Finds the number of occupied spaces after n steps. For smaller values of n, the
+   * number of occupied spaces is calculated iteratively. For larger values of n, the
+   * number of occupied spaces is extrapolated from the first three modular samples.
+   * @param {number} [n=1] - The number of steps. Defaults to 1.
+   * @returns {number} The number of occupied spaces after n steps
+   */
+  step(n: number = 1): number {
+    const [rS, cS] = this._start;
+    let positions: Set<string> = new Set([`${rS},${cS}`]);
+    let samples: number[] = [];
 
-    for (let i = 0; i < n; i++) {
-      const lastStep = stepHistory.at(-1)!;
-      const thisStep = new Map<string, Coords>();
-      for (const [x, y] of lastStep.values()) {
-        for (const [dx, dy] of neighbours) {
-          const [xx, yy] = [x + dx, y + dy];
-          if (xx < 0 || xx >= this._width || yy < 0 || yy >= this._height || this._stones.has(`${xx},${yy}`)) {
-            continue;
-          }
-          thisStep.set(`${xx},${yy}`, [xx, yy]);
+    for (let i = 1; samples.length < 3 && i <= n; i++) {
+      const newPositions = new Set<string>();
+      for (const id of positions) {
+        const [r, c] = id.split(",").map(Number);
+        for (const [dr, dc] of neighbours) {
+          // Actual positions for tracking explored space
+          const [rr, cc] = [r + dr, c + dc];
+          // Modulo positions used for checking obstacles
+          const [mr, mc] = [(rr + 2 * this._size) % this._size, (cc + 2 * this._size) % this._size];
+          if (this._layout[mr][mc] !== "#") newPositions.add(`${rr},${cc}`);
         }
       }
-      stepHistory.push(thisStep);
+      positions = newPositions;
+      if (i % this._size === n % this._size) samples.push(positions.size);
     }
-    return stepHistory.at(-1)?.size ?? -1;
+    return samples.length === 3 ? this._extrapolate(samples, n) : positions.size;
+  }
+
+  /**
+   * Extrapolates samples to find the number of occupied spaces after goal steps.
+   *
+   * If we are interested in the number of occupied spaces after some large number m steps,
+   * we can generally see that the property grows quadratically (as the general growth is
+   * in the shape of a square).
+   *
+   * Let f(n) be the number of spaces you can reach after n steps. Let X be the size of
+   * the input grid. Then, f(n), f(n+X), f(n+2X), is quadratic. Let a0, a1 and a2 be the
+   * sample values calculated iteratively.
+   *
+   * a0 = an0^2 + bn0 + c
+   * a1 = an1^2 + bn1 + c
+   * a2 = an2^2 + bn2 + c
+   *
+   * n0 = 0, n1 = 1, n2 = 2
+   * a0 = c
+   * a1 = a + b + a0
+   *      -> b = a1 - a0 - a
+   * a2 = 4a + 2b + a0
+   *      -> a = (a2 - a0 - 2b) / 4
+   *      -> a = (a2 - a0 - 2a1 + 2a0 + 2a) / 4
+   *      -> a = (a2 + a0 - 2a1) / 4  + a/2
+   *      -> a/2 = (a2 + a0 - 2a1) / 4
+   *      -> a = (a2 + a0 - 2a1) / 2
+   * @param {number[]} samples - First three samples of the quadratic function
+   * @param {number} goal - The target number of steps
+   * @returns {number} - The number of occupied spaces after goal steps
+   */
+  _extrapolate(samples: number[], goal: number): number {
+    const [a0, a1, a2] = samples;
+    const a = (a2 + a0 - 2 * a1) / 2;
+    const b = a1 - a0 - a;
+    const c = a0;
+    const nm = Math.floor(goal / this._size);
+    return a * nm ** 2 + b * nm + c;
   }
 }
 
 // INPUT PROCESSING
 const input = readFile(__dirname + "/input.txt", ["\n", ""]) as string[][];
 const garden = new Garden(input);
-console.log(garden.step(64));
+
+// RESULTS
+console.log(`Part 1: ${garden.step(64)}`);
+console.log(`Part 2: ${garden.step(26501365)}`);
