@@ -1,6 +1,6 @@
 import { readFile } from "@jakub-l/aoc-lib/input-parsing";
 import { Queue } from "@jakub-l/aoc-lib/data-structures";
-import { prod } from "@jakub-l/aoc-lib/math";
+import { prod, gcd } from "@jakub-l/aoc-lib/math";
 
 // UTILS
 type Signal = 0 | 1;
@@ -84,6 +84,9 @@ class Machine {
       while (!queue.isEmpty) {
         const details = queue.dequeue()!;
         signalCounts[details.signal]++;
+        if (["mk", "fp", "xt", "zc"].includes(details.source) && details.signal === 1) {
+          console.log(details, i);
+        }
         const newSignals = this._modules[details.target]?.recieveSignal(details) ?? [];
         for (const newSignal of newSignals) queue.enqueue(newSignal);
       }
@@ -91,18 +94,37 @@ class Machine {
     return prod(signalCounts);
   }
 
+  findTurnOnTime(target = "rx"): number {
+    let startModules = this._inputsLookup[target];
+    while (startModules.length === 1) startModules = startModules.flatMap(module => this._inputsLookup[module]);
+    const lastHighSignal: Record<string, number> = startModules.reduce((acc, module) => ({ ...acc, [module]: -1 }), {});
+    const loopLengths: Record<string, number> = { ...lastHighSignal };
+    let buttonPresses = 0;
+
+    while (Object.values(loopLengths).some(loop => loop === -1)) {
+      const queue: Queue<SignalDetails> = new Queue();
+      queue.enqueue({ source: "button", target: "broadcaster", signal: 0 });
+      while (!queue.isEmpty) {
+        const details = queue.dequeue()!;
+        const { source, signal } = details;
+        if (source in lastHighSignal && signal === 1) {
+          if (lastHighSignal[source] !== -1) {
+            loopLengths[source] = buttonPresses - lastHighSignal[source];
+          } else {
+            lastHighSignal[source] = buttonPresses;
+          }
+        }
+        const newSignals = this._modules[details.target]?.recieveSignal(details) ?? [];
+        for (const newSignal of newSignals) queue.enqueue(newSignal);
+      }
+      buttonPresses++;
+    }
+    return Object.values(loopLengths).reduce((res, loop) => Math.abs(res * loop) / gcd(res, loop), 1);
+  }
 }
 
 // INPUT PROCESSING
 const input = readFile(__dirname + "/input.txt", ["\n", " -> "]) as string[][];
-// const input = `broadcaster -> a
-// %a -> inv, con
-// &inv -> b
-// %b -> con
-// &con -> output`
-//   .split("\n")
-//   .map(line => line.split(" -> "));
-
 const machine = new Machine(input);
 
-console.log(machine.pushButton(1_000));
+console.log(machine.findTurnOnTime());
