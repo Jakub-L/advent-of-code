@@ -5,15 +5,29 @@ import { prod, gcd } from "@jakub-l/aoc-lib/math";
 // UTILS
 type Signal = 0 | 1;
 type SignalDetails = { source: string; target: string; signal: Signal };
-
 interface Module {
+  /** The identifier of the module, without a type prefix */
   name: string;
+  /** The identifiers of modules to which this module sends signals */
   targets: string[];
+  /**
+   * Processes a signal and returns the signals that should be sent to the targets
+   * @param {SignalDetails} details - The details of the incoming signal
+   * @returns {SignalDetails[]} The outgoing signals sent by this module
+   */
   recieveSignal(details: SignalDetails): SignalDetails[];
 }
 
+/** A Flip-flop module */
 class FlipFlop implements Module {
+  /** Whether the module is currently on */
   private _isOn: boolean = false;
+
+  /**
+   * Creates a new flip-flop module
+   * @param {string} name - The identifier of the module, without a type prefix ("%")
+   * @param {string} targets - The identifiers of modules to which this module sends signals
+   */
   constructor(public name: string, public targets: string[]) {}
 
   recieveSignal(details: SignalDetails): SignalDetails[] {
@@ -27,11 +41,22 @@ class FlipFlop implements Module {
   }
 }
 
+/** A conjunction module */
 class Conjunction implements Module {
+  /** The last signal received from each input */
   private _lastSignal: Record<string, Signal> = {};
 
+  /**
+   * Creates a new conjunction module
+   * @param {string} name - The identifier of the module, without a type prefix ("&")
+   * @param {string} targets - The identifiers of modules to which this module sends signals
+   */
   constructor(public name: string, public targets: string[]) {}
 
+  /**
+   * Sets the inputs of the conjunction module
+   * @param {string[]} names - The identifiers of the input modules
+   */
   setInputs(names: string[]) {
     this._lastSignal = names.reduce((acc, name) => ({ ...acc, [name]: 0 }), {});
   }
@@ -44,7 +69,13 @@ class Conjunction implements Module {
   }
 }
 
+/** A broadcaster module */
 class Broadcaster implements Module {
+  /**
+   * Creates a new conjunction module
+   * @param {string} name - The identifier of the module. Must be "broadcaster"
+   * @param {string} targets - The identifiers of modules to which this module sends signals
+   */
   constructor(public name: string, public targets: string[]) {}
 
   recieveSignal(details: SignalDetails): SignalDetails[] {
@@ -53,10 +84,18 @@ class Broadcaster implements Module {
   }
 }
 
+/** A machine with connected modules */
 class Machine {
+  /** The modules in the machine */
   private _modules: Record<string, Module> = {};
+  /** A lookup of module inputs for each module */
   private _inputsLookup: Record<string, string[]> = {};
 
+  /**
+   * Creates a new machine
+   * @param {string[][]} configuration - The configuration of the machine, in the format [name, targets],
+   *       where targets is a comma-space-separated (", ") list of module names.
+   */
   constructor(configuration: string[][]) {
     for (const module of configuration) {
       const [name, targetString] = module;
@@ -76,6 +115,11 @@ class Machine {
     }
   }
 
+  /**
+   * Pushes the button on the machine and counts the number of signals of each type
+   * @param {number} [n=1] - The number of times to push the button. Defaults to 1.
+   * @returns {number} The product of the number of high and low signals
+   */
   pushButton(n: number = 1): number {
     const signalCounts = [0, 0];
     for (let i = 0; i < n; i++) {
@@ -84,16 +128,28 @@ class Machine {
       while (!queue.isEmpty) {
         const details = queue.dequeue()!;
         signalCounts[details.signal]++;
-        if (["mk", "fp", "xt", "zc"].includes(details.source) && details.signal === 1) {
-          console.log(details, i);
-        }
-        const newSignals = this._modules[details.target]?.recieveSignal(details) ?? [];
-        for (const newSignal of newSignals) queue.enqueue(newSignal);
+        for (const newSignal of this._modules[details.target]?.recieveSignal(details) ?? []) queue.enqueue(newSignal);
       }
     }
     return prod(signalCounts);
   }
 
+  /**
+   * Finds how many button presses it takes for the target module to recieve a low signal.
+   *
+   * Works under an assumption that the modules feeding the target are all conjunction modules
+   * which are fed by other conjunction modules, for at least one level. The button is then
+   * pressed until each of the feeding modules sends a high signal twice.
+   *
+   * These values can be used to calculate the loop lengths for each of the feeding modules,
+   * and the lowest common multiple of these loop lengths is the number of button presses
+   * required for the target to recieve a low signal.
+   *
+   * The assumptions are correct for the input, but it can't be guaranteed to be true for
+   * all users' inputs.
+   * @param {string} [target="rx"] - The identifier of the target module
+   * @returns {number} The number of button presses required for the target to recieve a low signal
+   */
   findTurnOnTime(target = "rx"): number {
     let startModules = this._inputsLookup[target];
     while (startModules.length === 1) startModules = startModules.flatMap(module => this._inputsLookup[module]);
@@ -106,16 +162,12 @@ class Machine {
       queue.enqueue({ source: "button", target: "broadcaster", signal: 0 });
       while (!queue.isEmpty) {
         const details = queue.dequeue()!;
-        const { source, signal } = details;
-        if (source in lastHighSignal && signal === 1) {
-          if (lastHighSignal[source] !== -1) {
-            loopLengths[source] = buttonPresses - lastHighSignal[source];
-          } else {
-            lastHighSignal[source] = buttonPresses;
-          }
+        if (details.source in lastHighSignal && details.signal === 1) {
+          if (lastHighSignal[details.source] !== -1) {
+            loopLengths[details.source] = buttonPresses - lastHighSignal[details.source];
+          } else lastHighSignal[details.source] = buttonPresses;
         }
-        const newSignals = this._modules[details.target]?.recieveSignal(details) ?? [];
-        for (const newSignal of newSignals) queue.enqueue(newSignal);
+        for (const newSignal of this._modules[details.target]?.recieveSignal(details) ?? []) queue.enqueue(newSignal);
       }
       buttonPresses++;
     }
@@ -127,4 +179,6 @@ class Machine {
 const input = readFile(__dirname + "/input.txt", ["\n", " -> "]) as string[][];
 const machine = new Machine(input);
 
-console.log(machine.findTurnOnTime());
+// RESULTS
+console.log(`Part 1: ${machine.pushButton(1000)}`);
+console.log(`Part 2: ${machine.findTurnOnTime()}`);
