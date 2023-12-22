@@ -32,9 +32,7 @@ enum Direction {
 }
 
 type CityBlock = { x: number; y: number; heat: number; direction: Direction | null; streak: number };
-type QueueNode = { priority: number; val: CityBlock };
-
-const blockToNode = (block: CityBlock): QueueNode => ({ priority: block.heat, val: block });
+const priorityMapper = (block: CityBlock): number => block.heat;
 
 const directionArray: Direction[] = [Direction.Up, Direction.Right, Direction.Down, Direction.Left];
 const directionDelta: Record<Direction, [number, number]> = {
@@ -52,12 +50,15 @@ interface DijkstraOptions {
 export const dijkstra = (grid: number[][], options: DijkstraOptions = {}): number => {
   const { start = [0, 0], end = [grid.length - 1, grid[0].length - 1] } = options;
   const visited = new Set();
+  const [ys, xs] = start;
   const [yt, xt] = end;
-  const startNode = blockToNode({ x: start[1], y: start[0], heat: 0, direction: null, streak: 0 });
-  const queue: MinHeap<CityBlock> = new MinHeap<CityBlock>([startNode]);
+  const queue: MinHeap<CityBlock> = new MinHeap<CityBlock>(
+    [{ x: ys, y: xs, heat: 0, direction: null, streak: 0 }],
+    priorityMapper
+  );
 
   while (!queue.isEmpty) {
-    const { x, y, heat, direction, streak } = (queue.pop() as QueueNode).val;
+    const { x, y, heat, direction, streak } = queue.pop();
     if (x === xt && y === yt) return heat;
     for (let newDir of directionArray) {
       const [dx, dy] = directionDelta[newDir];
@@ -72,7 +73,7 @@ export const dijkstra = (grid: number[][], options: DijkstraOptions = {}): numbe
       if (isReverse || isStreakBad || isVisited || isOutOfBounds) continue;
 
       visited.add(id);
-      queue.add(blockToNode({ x: xx, y: yy, heat: heat + grid[yy][xx], direction: newDir, streak: newStreak }));
+      queue.add({ x: xx, y: yy, heat: heat + grid[yy][xx], direction: newDir, streak: newStreak });
     }
   }
   return -1;
