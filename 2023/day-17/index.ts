@@ -45,10 +45,12 @@ const directionDelta: Record<Direction, [number, number]> = {
 interface DijkstraOptions {
   start?: [number, number];
   end?: [number, number];
+  minStreak?: number;
+  maxStreak?: number;
 }
 
 export const dijkstra = (grid: number[][], options: DijkstraOptions = {}): number => {
-  const { start = [0, 0], end = [grid.length - 1, grid[0].length - 1] } = options;
+  const { start = [0, 0], end = [grid.length - 1, grid[0].length - 1], minStreak = 0, maxStreak = 3 } = options;
   const visited = new Set();
   const [ys, xs] = start;
   const [yt, xt] = end;
@@ -62,23 +64,29 @@ export const dijkstra = (grid: number[][], options: DijkstraOptions = {}): numbe
     if (x === xt && y === yt) return heat;
     for (let newDir of directionArray) {
       const [dx, dy] = directionDelta[newDir];
-      const [xx, yy] = [x + dx, y + dy];
-      const newStreak = newDir === direction ? streak + 1 : 1;
+      let [xx, yy] = [x + dx, y + dy];
+      let newHeat = heat + grid[yy]?.[xx] ?? 0;
+      let newStreak = newDir === direction ? streak + 1 : 1;
+      while (newStreak < minStreak) {
+        [xx, yy] = [xx + dx, yy + dy];
+        newHeat += grid[yy]?.[xx] ?? 0;
+        newStreak++;
+      }
       const id = `${xx},${yy},${newDir},${newStreak}`;
 
       const isReverse = direction !== null && newDir === directionArray[(direction + 2) % 4];
-      const isStreakBad = newStreak > 3;
+      const isStreakBad = newStreak > maxStreak;
       const isOutOfBounds = grid[yy]?.[xx] === undefined;
       const isVisited = visited.has(id);
       if (isReverse || isStreakBad || isVisited || isOutOfBounds) continue;
 
       visited.add(id);
-      queue.add({ x: xx, y: yy, heat: heat + grid[yy][xx], direction: newDir, streak: newStreak });
+      queue.add({ x: xx, y: yy, heat: newHeat, direction: newDir, streak: newStreak });
     }
   }
   return -1;
 };
 
-console.log(dijkstra(input));
-console.log("Part 1 should be: 1256");
-console.log("Part 2 should be: 1382");
+// RESULTS
+console.log(`Part 1: ${dijkstra(input)}`);
+console.log(`Part 2: ${dijkstra(input, { minStreak: 4, maxStreak: 10 })}`);
