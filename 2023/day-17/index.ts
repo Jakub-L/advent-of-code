@@ -1,23 +1,5 @@
 import { readFile } from "@jakub-l/aoc-lib/input-parsing";
-import { MinHeap } from "@jakub-l/aoc-lib/data-structures";
-
-// const input = `2413432311323
-// 3215453535623
-// 3255245654254
-// 3446585845452
-// 4546657867536
-// 1438598798454
-// 4457876987766
-// 3637877979653
-// 4654967986887
-// 4564679986453
-// 1224686865563
-// 2546548887735
-// 4322674655533`
-//   .split("\n")
-//   .map(line => line.split("").map(Number));
-
-const input = readFile(__dirname + "/input.txt", ["\n", ""], x => Number(x)) as unknown[][] as number[][];
+import { MinHeap as PriorityQueue } from "@jakub-l/aoc-lib/data-structures";
 
 // UTILS
 /**
@@ -31,7 +13,9 @@ enum Direction {
   Left
 }
 
+/** A city block within the lava caves */
 type CityBlock = { x: number; y: number; heat: number; direction: Direction | null; streak: number };
+/** A function that maps a city block to its priority, used for the Priority Queue */
 const priorityMapper = (block: CityBlock): number => block.heat;
 
 const directionArray: Direction[] = [Direction.Up, Direction.Right, Direction.Down, Direction.Left];
@@ -49,12 +33,22 @@ interface DijkstraOptions {
   maxStreak?: number;
 }
 
+/**
+ * Performs Dijkstra's algorithm on the given grid, starting at the given start
+ * @param {number[][]} grid - A 2D array of numbers, representing the heat of each block
+ * @param {DijkstraOptions} options - Options for the algorithm
+ * @param {number} options.start - The starting point of the algorithm. Defaults to [0, 0]
+ * @param {number} options.end - The ending point of the algorithm. Defaults to [grid.length - 1, grid[0].length - 1]
+ * @param {number} options.minStreak - The minimum number of blocks that must be traversed in the same direction. Defaults to 0
+ * @param {number} options.maxStreak - The maximum number of blocks that can be traversed in the same direction. Defaults to 3
+ * @returns {number} The minimum heat loss to get from the start to the end
+ */
 export const dijkstra = (grid: number[][], options: DijkstraOptions = {}): number => {
   const { start = [0, 0], end = [grid.length - 1, grid[0].length - 1], minStreak = 0, maxStreak = 3 } = options;
   const visited = new Set();
   const [ys, xs] = start;
   const [yt, xt] = end;
-  const queue: MinHeap<CityBlock> = new MinHeap<CityBlock>(
+  const queue: PriorityQueue<CityBlock> = new PriorityQueue<CityBlock>(
     [{ x: ys, y: xs, heat: 0, direction: null, streak: 0 }],
     priorityMapper
   );
@@ -86,6 +80,9 @@ export const dijkstra = (grid: number[][], options: DijkstraOptions = {}): numbe
   }
   return -1;
 };
+
+// INPUT PARSING
+const input = readFile(__dirname + "/input.txt", ["\n", ""], x => Number(x)) as unknown[][] as number[][];
 
 // RESULTS
 console.log(`Part 1: ${dijkstra(input)}`);
