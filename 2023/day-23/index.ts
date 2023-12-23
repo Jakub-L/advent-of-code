@@ -1,14 +1,8 @@
-import { deepEqual } from "@jakub-l/aoc-lib/utils";
 import { readFile } from "@jakub-l/aoc-lib/input-parsing";
 import { Queue } from "@jakub-l/aoc-lib/data-structures";
 
+// UTILS
 type Coord = [r: number, c: number];
-type HikeOptions = {
-  visited?: Set<string>;
-  end?: Coord;
-  current?: Coord;
-};
-
 const validSlopeMoves: Record<string, Coord[]> = { v: [[1, 0]], "^": [[-1, 0]], ">": [[0, 1]], "<": [[0, -1]] };
 const neighbourMoves: Coord[] = [
   [0, 1],
@@ -24,6 +18,7 @@ class Trail {
   private _ignoreSlope: boolean = false;
   private _vertices: Map<string, Coord> = new Map();
   private _edges: Map<string, Map<string, number>> = new Map();
+  private _longestHike: number = -1;
 
   constructor(layout: string[][], start?: Coord, end?: Coord) {
     this._layout = layout;
@@ -32,38 +27,29 @@ class Trail {
     this._end = end ?? [layout.length - 1, layout[0].length - 2];
     this._vertices = this._getVertices();
     this._edges = this._getEdges();
-
-    // console.log(this._edges);
-    // console.log(
-    //   this._layout.map((r, i) => r.map((c, j) => (this._vertices.has(`${i},${j}`) ? "O" : c)).join("")).join("\n")
-    // );
   }
 
-  longestHike(ignoreSlope: boolean = false, options: HikeOptions = {}): number {
+  longestHike(ignoreSlope: boolean = false): number {
     if (ignoreSlope !== this._ignoreSlope) {
       this._ignoreSlope = ignoreSlope;
       this._vertices = this._getVertices();
       this._edges = this._getEdges();
+      this._longestHike = -1;
     }
-    const { end = this._end, current = this._start, visited = new Set() } = options;
-    const connections = this._edges.get(`${current.join()}`)!;
-    const distances = [];
+    if (this._longestHike > -1) return this._longestHike;
+    this._dfs(this._start.join(), this._end.join(), new Set(), 0);
+    return this._longestHike;
+  }
 
-    for (const [vertex, dist] of connections) {
-      if (visited.has(vertex)) continue;
-      if (deepEqual(end, this._vertices.get(vertex))) distances.push(dist);
-      else
-        distances.push(
-          dist +
-            this.longestHike(ignoreSlope, {
-              end,
-              current: this._vertices.get(vertex),
-              visited: new Set([...visited, vertex])
-            })
-        );
+  private _dfs(currId: string, endId: string, visited: Set<string>, dist: number) {
+    if (currId === endId) this._longestHike = Math.max(this._longestHike, dist);
+    for (const [connectionId, edgeLength] of this._edges.get(currId)!) {
+      if (!visited.has(connectionId)) {
+        visited.add(connectionId);
+        this._dfs(connectionId, endId, visited, dist + edgeLength);
+        visited.delete(connectionId);
+      }
     }
-
-    return Math.max(...distances);
   }
 
   private _getVertices(): Map<string, Coord> {
@@ -118,35 +104,9 @@ class Trail {
 }
 
 // INPUT PARSING
-// const input = `#.#####################
-// #.......#########...###
-// #######.#########.#.###
-// ###.....#.>.>.###.#.###
-// ###v#####.#v#.###.#.###
-// ###.>...#.#.#.....#...#
-// ###v###.#.#.#########.#
-// ###...#.#.#.......#...#
-// #####.#.#.#######.#.###
-// #.....#.#.#.......#...#
-// #.#####.#.#.#########v#
-// #.#...#...#...###...>.#
-// #.#.#v#######v###.###v#
-// #...#.>.#...>.>.#.###.#
-// #####v#.#.###v#.#.###.#
-// #.....#...#...#.#.#...#
-// #.#########.###.#.#.###
-// #...###...#...#...#.###
-// ###.###.#.###v#####v###
-// #...#...#.#.>.>.#.>.###
-// #.###.###.#.###.#.#v###
-// #.....###...###...#...#
-// #####################.#`
-//   .split("\n")
-//   .map(line => line.split(""));
-
 const input = readFile(__dirname + "/input.txt", ["\n", ""]) as string[][];
 const trail = new Trail(input);
-console.log(trail.longestHike());
-console.log(trail.longestHike(true));
 
-// console.log(longestHike(input) - 1);
+// RESULTS
+console.log(`Part 1: ${trail.longestHike()}`);
+console.log(`Part 2: ${trail.longestHike(true)}`);
