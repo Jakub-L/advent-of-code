@@ -6,11 +6,20 @@ type Vector3 = { x: number; y: number; z: number };
 type NumRange = { min: number; max: number };
 type CanonicalForm = { a: number; b: number; c: number };
 
+/** A class representing a hailstone */
 class Hailstone {
+  /** The position vector at t = 0 */
   p: Vector3;
+  /** The velocity vector */
   v: Vector3;
+  /** The line equation for the hailstone's path */
   line2D: CanonicalForm;
 
+  /**
+   * Creates a new Hailstone
+   * @param {number[]} p - The position vector at t = 0 in the form [x, y, z] 
+   * @param {number[]} v - The velocity vector in the form [x, y, z] 
+   */
   constructor(p: number[], v: number[]) {
     this.p = { x: p[0], y: p[1], z: p[2] };
     this.v = { x: v[0], y: v[1], z: v[2] };
@@ -59,6 +68,7 @@ class Hailstone {
     return inFuture ? { x, y } : null;
   }
 
+  /** Returns a string representation of the hailstone */
   toString(): string {
     return `{ Hailstone: p = (${this.p.x}, ${this.p.y}, ${this.p.z}), v = (${this.v.x}, ${this.v.y}, ${this.v.z}) }`;
   }
@@ -92,6 +102,13 @@ class Hailstone {
   }
 }
 
+/**
+ * Checks whether a point falls in a given area
+ * @param {Vector2} p - 2D point to check 
+ * @param {NumRange} x - Range of x values (inclusive)
+ * @param {NumRange} y - Range of y values (inclusive) 
+ * @returns {boolean} True if the point is within the area, false otherwise
+ */
 const isInArea = (p: Vector2, x: NumRange, y: NumRange): boolean => {
   return p.x >= x.min && p.x <= x.max && p.y >= y.min && p.y <= y.max;
 };
