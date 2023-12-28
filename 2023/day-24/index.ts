@@ -176,4 +176,4 @@ for (let i = 0; i < hailstones.length; i++) {
 
 // RESULTS
 console.log(`Part 1: ${intersections}`);
-console.log(`Part 2: ${await getRock(hailstones)}`);
+getRock(hailstones).then(n => console.log(`Part 2: ${n}`));
