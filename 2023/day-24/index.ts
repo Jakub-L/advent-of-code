@@ -17,8 +17,8 @@ class Hailstone {
 
   /**
    * Creates a new Hailstone
-   * @param {number[]} p - The position vector at t = 0 in the form [x, y, z] 
-   * @param {number[]} v - The velocity vector in the form [x, y, z] 
+   * @param {number[]} p - The position vector at t = 0 in the form [x, y, z]
+   * @param {number[]} v - The velocity vector in the form [x, y, z]
    */
   constructor(p: number[], v: number[]) {
     this.p = { x: p[0], y: p[1], z: p[2] };
@@ -104,27 +104,64 @@ class Hailstone {
 
 /**
  * Checks whether a point falls in a given area
- * @param {Vector2} p - 2D point to check 
+ * @param {Vector2} p - 2D point to check
  * @param {NumRange} x - Range of x values (inclusive)
- * @param {NumRange} y - Range of y values (inclusive) 
+ * @param {NumRange} y - Range of y values (inclusive)
  * @returns {boolean} True if the point is within the area, false otherwise
  */
 const isInArea = (p: Vector2, x: NumRange, y: NumRange): boolean => {
   return p.x >= x.min && p.x <= x.max && p.y >= y.min && p.y <= y.max;
 };
 
-// INPUT PROCESSING
-// const input = `19, 13, 30 @ -2,  1, -2
-// 18, 19, 22 @ -1, -1, -2
-// 20, 25, 34 @ -2, -2, -4
-// 12, 31, 28 @ -1, -2, -1
-// 20, 19, 15 @  1, -5, -3`
-//   .split("\n")
-//   .map(line => line.split(" @ ").map(s => s.split(", ").map(Number)));
+/**
+ * Finds the starting position and velocity of a rock that will hit every hailstone.
+ *
+ * If since the hailstone and rock have to hit each other at the same time t, then their
+ * coordinates have to satisfy the following equations. Let xr, yr, zr, vxr, vyr, vzr be
+ * the rock's position and velocity, and xh, yh, zh, vxh, vyh, vzh be the hailstone's
+ * position and velocity.
+ *     xr + vxr * t = xh + vxh * t
+ *     yr + vyr * t = yh + vyh * t
+ *     zr + vzr * t = zh + vzh * t
+ * Rearranging for t:
+ *     vxr * t - vhx * t = xh - xr
+ *     t = (xh - xr) / (vxr - vxh)
+ * This can be done for other axes as well:
+ *     t = (yh - yr) / (vyr - vyh)
+ *     t = (zh - zr) / (vzr - vzh)
+ * Since they are equal to one another, we can set:
+ *     (xh - xr) / (vxr - vxh) - (yh - yr) / (vyr - vyh) = 0
+ *     (xh - xr) * (vyr - vyh) - (yh - yr) * (vxr - vxh) = 0
+ * And similarly:
+ *     (xh - xr) * (vzr - vzh) - (zh - zr) * (vxr - vxh) = 0
+ *
+ * Unfortunately, these are nonlinear equations and JavaScript/TypeScript doesn't have
+ * a good enough solver library. We can "cheat" by using Python's sympy library and
+ * spawning it in a child process. It solves the equations and we can just print the result.
+ *
+ * The python child process also checks that the result has integer values for all its
+ * found coefficients.
+ *
+ * @param {Hailstone[]} hailstones - List of hailstones
+ * @returns {Promise<number>} The sum of the starting x, y, and z coordinates of the rock
+ */
+const getRock = async (hailstones: Hailstone[]): Promise<number> => {
+  return new Promise(resolve => {
+    const equations: string[] = [];
+    for (let i = 0; i < 3; i++) {
+      const { p, v } = hailstones[i];
+      equations.push(`(${p.x} - x) * (v - ${v.y}) - (${p.y} - y) * (u - ${v.x})`);
+      equations.push(`(${p.x} - x) * (w - ${v.z}) - (${p.z} - z) * (u - ${v.x})`);
+    }
+    const spawn = require("child_process").spawn;
+    const pythonProcess = spawn("python3", ["./day-24/solver.py", equations]);
+    pythonProcess.stdout.on("data", (data: any) => resolve(Number(data.toString())));
+  });
+};
 
+// INPUT PROCESSING
 const input = readFile(__dirname + "/input.txt", ["\n", " @ ", ", "], s => Number(s)) as unknown[][][] as number[][][];
 const hailstones = input.map(([p, v]) => new Hailstone(p, v));
-console.log(hailstones.map(h => h.toString()));
 
 // PART 1
 let intersections: number = 0;
@@ -137,4 +174,6 @@ for (let i = 0; i < hailstones.length; i++) {
   }
 }
 
-console.log(intersections);
+// RESULTS
+console.log(`Part 1: ${intersections}`);
+console.log(`Part 2: ${await getRock(hailstones)}`);
