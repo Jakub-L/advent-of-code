@@ -2,9 +2,9 @@ import { readFile } from "@jakub-l/aoc-lib/input-parsing";
 import { sum } from "@jakub-l/aoc-lib/math";
 import { Counter } from "@jakub-l/aoc-lib/collections";
 
-const input: string[][] = readFile(__dirname + "/input.txt", ["\n", "  "]) as string[][];
-const listA: number[] = input.map(e => Number(e[0]));
-const listB: number[] = input.map(e => Number(e[1]));
+const input: number[][] = readFile(__dirname + "/input.txt", ["\n", "  "], Number) as number[][];
+const listA: number[] = input.map(([a]) => a);
+const listB: number[] = input.map(([_, b]) => b);
 
 /**
  * Calculates the distances between elements of two lists.
