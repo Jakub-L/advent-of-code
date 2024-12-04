@@ -15,6 +15,7 @@ MXMXAXMASX`
 
 const input = readFile(__dirname + "/input.txt", ["\n", ""]) as string[][];
 
+// Part 1
 const findXmas = (wordsearch: string[][]): number => {
   // prettier-ignore
   const directions = [
@@ -40,4 +41,25 @@ const findXmas = (wordsearch: string[][]): number => {
   return result;
 };
 
-console.log(findXmas(input)); 
+// Part 2
+const findCrossMas = (wordsearch: string[][]): number => {
+  // prettier-ignore
+  const corners = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+
+  let result = 0;
+  for (let i = 0; i < wordsearch.length; i++) {
+    for (let j = 0; j < wordsearch[i].length; j++) {
+      if (wordsearch[i][j] === "A") {
+        const [tl, tr, bl, br] = corners.map(([dx, dy]) => wordsearch[i + dx]?.[j + dy]);
+        const leftDiagonalValid = (tl === "M" && br === "S") || (tl === "S" && br === "M");
+        const rightDiagonalValid = (tr === "M" && bl === "S") || (tr === "S" && bl === "M");
+        result += leftDiagonalValid && rightDiagonalValid ? 1 : 0;
+      }
+    }
+  }
+  return result;
+};
+
+// Results
+console.log(findXmas(input));
+console.log(findCrossMas(input));
