@@ -1,21 +1,15 @@
 import { readFile } from "@jakub-l/aoc-lib/input-parsing";
 
-const sample = `MMMSXXMASM
-MSAMXMSMSA
-AMXSXMAAMM
-MSAMASMSMX
-XMASAMXAMM
-XXAMMXXAMA
-SMSMSASXSS
-SAXAMASAAA
-MAMMMXMMMM
-MXMXAXMASX`
-  .split("\n")
-  .map(x => x.split(""));
-
-const input = readFile(__dirname + "/input.txt", ["\n", ""]) as string[][];
+const input: string[][] = readFile(__dirname + "/input.txt", ["\n", ""]) as string[][];
 
 // Part 1
+/**
+ * Counts the number of occurences of "XMAS" in the wordsearch. The word can be in
+ * any direction and forwards or backwards. The same letter can be used multiple times.
+ *
+ * @param {string[][]} wordsearch - 2D array of characters
+ * @returns {number} - number of occurences of "XMAS" in the wordsearch
+ */
 const findXmas = (wordsearch: string[][]): number => {
   // prettier-ignore
   const directions = [
@@ -42,6 +36,20 @@ const findXmas = (wordsearch: string[][]): number => {
 };
 
 // Part 2
+/**
+ * Counts the number of occurences of the MAS-cross.
+ *
+ * The cross is defined as:
+ * M   S
+ *   A
+ * M   S
+ * With either the diagonals being either forwards or backwards.
+ * The cross requires both diagonals to be valid and each letter can
+ * be used multiple times.
+ *
+ * @param {string[][]} wordsearch - 2D array of characters
+ * @returns {number} - number of occurences of the MAS cross in the wordsearch
+ */
 const findCrossMas = (wordsearch: string[][]): number => {
   // prettier-ignore
   const corners = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
@@ -61,5 +69,5 @@ const findCrossMas = (wordsearch: string[][]): number => {
 };
 
 // Results
-console.log(findXmas(input));
-console.log(findCrossMas(input));
+console.log("Part 1:", findXmas(input));
+console.log("Part 2:", findCrossMas(input));
