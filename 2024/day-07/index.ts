@@ -7,6 +7,11 @@ type Equation = {
 };
 
 // Input parsing
+/**
+ * Parses a line of the input file into an Equation object
+ * @param {string} line - A row from the input file
+ * @returns {Equation} The parsed equation
+ */
 const parseLine = (line: string): Equation => {
   const [rawTarget, rawElements] = line.split(": ");
   return {
@@ -15,25 +20,26 @@ const parseLine = (line: string): Equation => {
   };
 };
 
-const sample = `190: 10 19
-3267: 81 40 27
-83: 17 5
-156: 15 6
-7290: 6 8 6 15
-161011: 16 10 13
-192: 17 8 14
-21037: 9 7 18 13
-292: 11 6 16 20`
-  .split("\n")
-  .map(parseLine);
-
 const input: Equation[] = readFile(__dirname + "/input.txt", ["\n"], parseLine) as Equation[];
 
 // Parts 1 & 2
+/** Adds two numbers */
 const add = (a: number, b: number): number => a + b;
+/** Multiplies two numbers */
 const mul = (a: number, b: number): number => a * b;
+/** Concatenates two numbers */
 const con = (a: number, b: number): number => Number(`${a}${b}`);
 
+/**
+ * Checks if the elements can make the target number.
+ *
+ * The operations ignore the normal order of operations and instead go from left to right.
+ *
+ * @param {Equation} equation - The equation to check
+ * @param {(function(number, number):number)[]} [operations=[add, mul]] - The operations that can
+ *      be used to combine the elements
+ * @returns {boolean} Whether the elements can make the target number
+ */
 const isValid = (equation: Equation, operations = [add, mul]): boolean => {
   const { target, elements } = equation;
   let current = [elements[0]];
@@ -44,5 +50,17 @@ const isValid = (equation: Equation, operations = [add, mul]): boolean => {
   return current.includes(target);
 };
 
-console.log(sum(input.filter(eq => isValid(eq)).map(e => e.target)));
-console.log(sum(input.filter(eq => isValid(eq, [add, mul, con])).map(e => e.target)));
+/**
+ * Returns the target numbers of equations that are valid.
+ * @param {Equation[]} equations - The equations to check
+ * @param {(function(number, number):number)[]} [operations=[add, mul]] - The operations that can
+ *      be used to combine the elements
+ * @returns {number[]} The target numbers of the valid equations
+ */
+const getValidTargets = (equations: Equation[], operations = [add, mul]): number[] => {
+  return equations.filter(eq => isValid(eq, operations)).map(e => e.target);
+};
+
+// Results
+console.log(`Part 1: ${sum(getValidTargets(input))}`);
+console.log(`Part 2: ${sum(getValidTargets(input, [add, mul, con]))}`);
