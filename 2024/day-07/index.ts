@@ -29,14 +29,20 @@ const sample = `190: 10 19
 
 const input: Equation[] = readFile(__dirname + "/input.txt", ["\n"], parseLine) as Equation[];
 
-// Parts 1
-const isValid = (equation: Equation): boolean => {
+// Parts 1 & 2
+const add = (a: number, b: number): number => a + b;
+const mul = (a: number, b: number): number => a * b;
+const con = (a: number, b: number): number => Number(`${a}${b}`);
+
+const isValid = (equation: Equation, operations = [add, mul]): boolean => {
   const { target, elements } = equation;
-  let current = [elements.shift()!];
-  for (const n of elements) {
-    current = current.flatMap(c => [c + n, c * n]);
+  let current = [elements[0]];
+  for (let i = 1; i < elements.length; i++) {
+    const n = elements[i];
+    current = current.flatMap(c => operations.map(op => op(c, n)));
   }
   return current.includes(target);
 };
 
-console.log(sum(input.filter(isValid).map(e => e.target)));
+console.log(sum(input.filter(eq => isValid(eq)).map(e => e.target)));
+console.log(sum(input.filter(eq => isValid(eq, [add, mul, con])).map(e => e.target)));
