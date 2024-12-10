@@ -13,8 +13,7 @@ const sample = `............
 ........A...
 .........A..
 ............
-............
-`
+............`
   .split("\n")
   .map(l => l.split(""));
 
@@ -63,60 +62,72 @@ class Vector2 {
 class Antenna {
   public frequency: string;
   public location: Vector2;
+  private _mapHeight: number;
+  private _mapWidth: number;
 
-  constructor(frequency: string, x: number, y: number) {
+  constructor(frequency: string, x: number, y: number, mapWidth: number, mapHeight: number) {
+    this._mapHeight = mapHeight;
+    this._mapWidth = mapWidth;
     this.frequency = frequency;
     this.location = new Vector2(x, y);
   }
 
-  getAntinodes(other: Antenna): Vector2[] {
+  private _isInBounds(node: Vector2): boolean {
+    return node.x >= 0 && node.x < this._mapWidth && node.y >= 0 && node.y < this._mapHeight;
+  }
+
+  getAntinodes(other: Antenna, useHarmonics: boolean = false): Vector2[] {
     if (this.frequency !== other.frequency) return [];
     const dir = other.location.subtract(this.location);
-    return [this.location.add(dir.multiply(2)), this.location.subtract(dir)];
+    const nodes: Vector2[] = [];
+    if (useHarmonics) {
+      const maxSize = Math.max(this._mapHeight, this._mapWidth);
+      for (let i = -maxSize; i < maxSize; i++) {
+        nodes.push(this.location.add(dir.multiply(i)));
+      }
+    } else {
+      nodes.push(this.location.add(dir.multiply(2)));
+      nodes.push(this.location.subtract(dir));
+    }
+    return nodes.filter(node => this._isInBounds(node));
   }
 }
 
 class CityMap {
   private _antennas: Map<string, Antenna[]> = new Map();
   private _antinodes: Map<string, Vector2[]> = new Map();
-  private _height: number;
-  private _width: number;
 
   constructor(map: string[][]) {
-    this._height = map.length;
-    this._width = map[0].length;
+    const mapHeight = map.length;
+    const mapWidth = map[0].length;
     for (let y = 0; y < map.length; y++) {
       for (let x = 0; x < map[y].length; x++) {
         const char = map[y][x];
         if (char !== ".") {
           const frequencyAntennas = this._antennas.get(char) || [];
-          this._antennas.set(char, [...frequencyAntennas, new Antenna(char, x, y)]);
+          this._antennas.set(char, [
+            ...frequencyAntennas,
+            new Antenna(char, x, y, mapWidth, mapHeight)
+          ]);
         }
       }
     }
-    this._getAntinodes();
   }
 
-  private _isInBounds(node: Vector2): boolean {
-    return node.x >= 0 && node.x < this._width && node.y >= 0 && node.y < this._height;
-  }
-
-  private _getAntinodes() {
+  private _getAntinodes(useHarmonics: boolean) {
     for (const [frequency, antennas] of this._antennas.entries()) {
       const antinodes = [];
       for (let i = 0; i < antennas.length; i++) {
         for (let j = i + 1; j < antennas.length; j++) {
-          antinodes.push(...antennas[i].getAntinodes(antennas[j]));
+          antinodes.push(...antennas[i].getAntinodes(antennas[j], useHarmonics));
         }
       }
-      this._antinodes.set(
-        frequency,
-        antinodes.filter(node => this._isInBounds(node))
-      );
+      this._antinodes.set(frequency, antinodes);
     }
   }
 
-  get antinodeCount(): number {
+  public antinodeCount(useHarmonics: boolean): number {
+    this._getAntinodes(useHarmonics);
     const set = new Set<string>();
     for (const antinodes of this._antinodes.values()) {
       for (const node of antinodes) {
@@ -128,4 +139,4 @@ class CityMap {
 }
 
 const cityMap = new CityMap(input);
-console.log(cityMap.antinodeCount);
+console.log(cityMap.antinodeCount(true));
