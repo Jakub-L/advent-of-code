@@ -9,11 +9,16 @@ type File = {
   id: number | null;
 };
 
-const sample: DiskMap = `2333133121414131402`.split("").map(Number);
 const input: DiskMap = readFile(`${__dirname}/input.txt`, [""], Number);
 
+// Part 1
+/**
+ * Converts a DiskMap into a Block by mapping each element to a sequence of IDs.
+ *
+ * @param {DiskMap} diskMap - An array of numbers representing the disk map.
+ * @returns {Block} A Block array where each element is either a unique ID or null, based on the index.
+ */
 const mapToBlock = (diskMap: DiskMap): Block => {
-  console.log(diskMap.length);
   let id = 0;
   return diskMap.reduce((block, n, i) => {
     const value = i % 2 ? null : id++;
@@ -21,6 +26,12 @@ const mapToBlock = (diskMap: DiskMap): Block => {
   }, [] as Block);
 };
 
+/**
+ * Compresses a Block by moving all null values to the end of the array.
+ *
+ * @param {Block} blocks - An array of numbers and nulls.
+ * @returns {Block} A compressed Block array where all null values are at the end.
+ */
 const compressBlock = (blocks: Block): Block => {
   const compressed: Block = structuredClone(blocks);
   for (let i = 0, j = blocks.length - 1; i <= j; i++) {
@@ -34,11 +45,23 @@ const compressBlock = (blocks: Block): Block => {
   return compressed;
 };
 
+/**
+ * Calculates the checksum of a Block by summing the product of each element and its index.
+ *
+ * @param {Block} block - A Block array.
+ * @returns {number} The checksum of the Block.
+ */
 const blockChecksum = (block: Block): number => {
   return sum(block.map((n, i) => (n === null ? 0 : n * i)));
 };
 
 // Part 2
+/**
+ * Converts a DiskMap into an array of Files.
+ *
+ * @param {DiskMap} disk - An array of numbers representing the disk map.
+ * @returns {Array<File>} An array of Files.
+ */
 const diskToFiles = (disk: DiskMap): Array<File> => {
   let pos = 0;
   let id = 0;
@@ -50,6 +73,12 @@ const diskToFiles = (disk: DiskMap): Array<File> => {
   });
 };
 
+/**
+ * Compresses an array of Files by moving all files to the beginning of the array.
+ *
+ * @param {Array<File>} files - An array of Files.
+ * @returns {Array<File>} A compressed array of Files where all files are at the beginning.
+ */
 const compressFiles = (files: Array<File>): Array<File> => {
   let compressed: Array<File> = structuredClone(files);
 
@@ -67,6 +96,12 @@ const compressFiles = (files: Array<File>): Array<File> => {
   return compressed.filter(f => f.size !== 0).sort((a, b) => a.pos - b.pos);
 };
 
+/**
+ * Calculates the checksum of an array of Files by summing the product of each element and its index.
+ *
+ * @param {Array<File>} files - An array of Files.
+ * @returns {number} The checksum of the Files.
+ */
 const fileChecksum = (files: Array<File>): number => {
   let sum = 0;
   for (const file of files) {
@@ -77,9 +112,6 @@ const fileChecksum = (files: Array<File>): number => {
   return sum;
 };
 
-console.log(
-  fileChecksum(compressFiles(diskToFiles(input)))
-  // .reduce((block, f) => block.concat(Array(f.size).fill(f.id)), [] as Block)
-  // .map(n => (n === null ? "." : n))
-  // .join("")
-);
+// Results
+console.log(blockChecksum(compressBlock(mapToBlock(input))));
+console.log(fileChecksum(compressFiles(diskToFiles(input))));
