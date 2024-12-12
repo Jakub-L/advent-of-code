@@ -3,26 +3,40 @@ import { readFile } from "@jakub-l/aoc-lib/input-parsing";
 import { sum } from "@jakub-l/aoc-lib/math";
 
 // Constants
-const DIR = [
+const DIR: number[][] = [
   [0, -1],
   [1, 0],
   [0, 1],
   [-1, 0]
 ];
 
+const ORTHOGONAL_PAIRS: number[][][] = [
+  [
+    [0, -1],
+    [1, 0]
+  ], // Up and right
+  [
+    [1, 0],
+    [0, 1]
+  ], // Right and down
+  [
+    [0, 1],
+    [-1, 0]
+  ], // Down and left
+  [
+    [-1, 0],
+    [0, -1]
+  ] // Left and up
+];
+
 // Input
 const input: string[][] = readFile(`${__dirname}/input.txt`, ["\n", ""]) as string[][];
 
-const sample = `RRRRIICCFF
-RRRRIICCCF
-VVRRRCCFFF
-VVRCCCJFFF
-VVVVCJJCFE
-VVIVCCJJEE
-VVIIICJJEE
-MIIIIIJJEE
-MIIISIJEEE
-MMMISSJEEE`
+const sample = `EEEEE
+EXXXX
+EEEEE
+EXXXX
+EEEEE`
   .split("\n")
   .map(line => line.split(""));
 
@@ -31,12 +45,24 @@ class Plot {
   public x: number;
   public y: number;
   public plant: string;
-  public neighbours: Set<string> = new Set();
+  public neighbours: Record<string, Plot> = {};
 
   constructor(x: number, y: number, plant: string) {
     this.x = x;
     this.y = y;
     this.plant = plant;
+  }
+
+  public cornerCount(layout: string[][]): number {
+    let count = 0;
+    for (const [[dx1, dy1], [dx2, dy2]] of ORTHOGONAL_PAIRS) {
+      const point1 = layout[this.y + dy1]?.[this.x + dx1];
+      const point2 = layout[this.y + dy2]?.[this.x + dx2];
+      const diagonal = layout[this.y + dy1 + dy2]?.[this.x + dx1 + dx2];
+      if (point1 !== this.plant && point2 !== this.plant) count++;
+      else if (point1 === this.plant && point2 === this.plant && diagonal !== this.plant) count++;
+    }
+    return count;
   }
 
   public toString(): string {
@@ -47,6 +73,9 @@ class Plot {
 class Region {
   public plots: Plot[] = [];
 
+  public bulkPrice(layout: string[][]): number {
+    return this.area * sum(this.plots.map(plot => plot.cornerCount(layout)));
+  }
   public toString(): string {
     return `${this.plots[0].plant}: ${this.plots.map(plot => plot.toString()).join(", ")}`;
   }
@@ -60,7 +89,7 @@ class Region {
   }
 
   get perimeter(): number {
-    return this.plots.reduce((acc, plot) => acc + 4 - plot.neighbours.size, 0);
+    return this.plots.reduce((acc, plot) => acc + 4 - Object.keys(plot.neighbours).length, 0);
   }
 
   get price(): number {
@@ -89,8 +118,8 @@ class Garden {
             const ny = plot.y + dy;
             if (layout[ny]?.[nx] === plot.plant) {
               const neighbour = new Plot(nx, ny, layout[ny][nx]);
-              plot.neighbours.add(`${nx},${ny}`);
-              neighbour.neighbours.add(`${plot.x},${plot.y}`);
+              plot.neighbours[`${nx},${ny}`] = neighbour;
+              neighbour.neighbours[`${plot.x},${plot.y}`] = plot;
               queue.enqueue(neighbour);
             }
           }
@@ -102,3 +131,4 @@ class Garden {
 
 const garden = new Garden(input);
 console.log(sum(garden.regions.map(r => r.price)));
+console.log(sum(garden.regions.map(r => r.bulkPrice(input))));
