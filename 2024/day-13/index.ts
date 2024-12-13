@@ -1,6 +1,8 @@
 import { readFile } from "@jakub-l/aoc-lib/input-parsing";
 import { sum } from "@jakub-l/aoc-lib/math";
 
+const OFFSET = 10_000_000_000_000;
+
 type Coords = { x: number; y: number };
 
 const sample: string[] = `Button A: X+94, Y+34
@@ -21,7 +23,7 @@ Prize: X=18641, Y=10279`.split("\n\n");
 
 const input: string[] = readFile(`${__dirname}/input.txt`, ["\n\n"]);
 
-// Part 1
+// Part 1 & 2
 class ClawMachine {
   private a: Coords;
   private b: Coords;
@@ -38,6 +40,12 @@ class ClawMachine {
     this.b = b;
     this.prize = prize;
     this.moves = this._calculateMoves();
+  }
+
+  public offsetPrize(offset: number): ClawMachine {
+    this.prize = { x: this.prize.x + offset, y: this.prize.y + offset };
+    this.moves = this._calculateMoves();
+    return this;
   }
 
   private _calculateMoves(): { a: number; b: number } {
@@ -58,5 +66,7 @@ class ClawMachine {
 
 // Results
 const machines = input.map(definition => new ClawMachine(definition));
+const offsetMachines = input.map(definition => new ClawMachine(definition).offsetPrize(OFFSET));
 
 console.log(`Part 1: ${sum(machines.map(machine => machine.tokens))}`);
+console.log(`Part 2: ${sum(offsetMachines.map(machine => machine.tokens))}`);
