@@ -23,74 +23,58 @@ const parseInput = (input: string[]): [WarehouseLayout, Instructions] => {
   ];
 };
 
-const [layout, instructions] = parseInput(readFile(`${__dirname}/input.txt`, ["\n\n"]));
+// const [layout, instructions] = parseInput(readFile(`${__dirname}/input.txt`, ["\n\n"]));
 
-// const [layout, instructions] = parseInput(
-//   `##########
-// #..O..O.O#
-// #......O.#
-// #.OO..O.O#
-// #..O@..O.#
-// #O#..O...#
-// #O..O..O.#
-// #.OO.O.OO#
-// #....O...#
-// ##########
+const [layout, instructions] = parseInput(
+  `#######
+#...#.#
+#.....#
+#..OO@#
+#..O..#
+#.....#
+#######
 
-// <vv>^<v^>v>^vv^v>v<>v^v<v<^vv<<<^><<><>>v<vvv<>^v^>^<<<><<v<<<v^vv^v>^
-// vvv<<^>^v^^><<>>><>^<<><^vv^^<>vvv<>><^^v>^>vv<>v<<<<v<^v>^<^^>>>^<v<v
-// ><>vv>v^v^<>><>>>><^^>vv>v<^^^>>v^v^<^^>v^^>v^<^v>v<>>v^v^<v>v^^<^^vv<
-// <<v<^>>^^^^>>>v^<>vvv^><v<<<>^^^vv^<vvv>^>v<^^^^v<>^>vvvv><>>v^<<^^^^^
-// ^><^><>>><>^^<<^^v>>><^<v>^<vv>>v>>>^v><>^v><<<<v>>v<v<v>vvv>^<><<>^><
-// ^>><>^v<><^vvv<^^<><v<<<<<><^v<<<><<<^^<v<^^^><^>>^<v^><<<^>>^v<v^v<v^
-// >^>>^v>vv>^<<^v<>><<><<v<<v><>v<^vv<<<>^^v^>^^>>><<^v>>v^v><^^>>^<>vv^
-// <><^^>^^^<><vvvvv^v<v<<>^v<v>v<<^><<><<><<<^^<<<^<<>><<><^^^>^^<>^>v<>
-// ^^>vv<^v^v<vv>^<><v<^v>^^^>>>^^vvv^>vvv<>>>^<^>>>>>^<<^v>^vvv<>^<><<v>
-// v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^`.split("\n\n")
-// );
-// const [layout, instructions] = parseInput(
-//   `##########
-// #..O..O.O#
-// #......O.#
-// #.OO..O.O#
-// #..O@..O.#
-// #O#..O...#
-// #O..O..O.#
-// #.OO.O.OO#
-// #....O...#
-// ##########
-
-// <vv>^<v^>v>^vv^v>v<>v^v<v<^vv<<<^><<><>>v<vvv<>^v^>^<<<><<v<<<v^vv^v>^
-// vvv<<^>^v^^><<>>><>^<<><^vv^^<>vvv<>><^^v>^>vv<>v<<<<v<^v>^<^^>>>^<v<v
-// ><>vv>v^v^<>><>>>><^^>vv>v<^^^>>v^v^<^^>v^^>v^<^v>v<>>v^v^<v>v^^<^^vv<
-// <<v<^>>^^^^>>>v^<>vvv^><v<<<>^^^vv^<vvv>^>v<^^^^v<>^>vvvv><>>v^<<^^^^^
-// ^><^><>>><>^^<<^^v>>><^<v>^<vv>>v>>>^v><>^v><<<<v>>v<v<v>vvv>^<><<>^><
-// ^>><>^v<><^vvv<^^<><v<<<<<><^v<<<><<<^^<v<^^^><^>>^<v^><<<^>>^v<v^v<v^
-// >^>>^v>vv>^<<^v<>><<><<v<<v><>v<^vv<<<>^^v^>^^>>><<^v>>v^v><^^>>^<>vv^
-// <><^^>^^^<><vvvvv^v<v<<>^v<v>v<<^><<><<><<<^^<<<^<<>><<><^^^>^^<>^>v<>
-// ^^>vv<^v^v<vv>^<><v<^v>^^^>>>^^vvv^>vvv<>>>^<^>>>>>^<<^v>^vvv<>^<><<v>
-// v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^`.split("\n\n")
-// );
+<vv<<^^<<^^`.split("\n\n")
+);
 
 // Part 1
 class Warehouse {
   private _width: number;
   private _height: number;
   private _robot: Coord = { x: -1, y: -1 };
-  private _walls: Set<string> = new Set();
+  private _walls: Map<string, Coord> = new Map();
   private _boxes: Map<string, Coord> = new Map();
+  private _isDoubleWidth: boolean;
 
-  constructor(layout: WarehouseLayout) {
+  constructor(layout: WarehouseLayout, isDoubleWidth: boolean = false) {
+    this._isDoubleWidth = isDoubleWidth;
     this._height = layout.length;
     this._width = layout[0].length;
     for (let y = 0; y < layout.length; y++) {
       for (let x = 0; x < layout[y].length; x++) {
         const cell = layout[y][x];
-        if (cell === "#") this._walls.add(`${x},${y}`);
+        if (cell === "#") this._walls.set(`${x},${y}`, { x, y });
         else if (cell === "O") this._boxes.set(`${x},${y}`, { x, y });
         else if (cell === "@") this._robot = { x, y };
       }
     }
+    if (isDoubleWidth) this._doubleWidth();
+  }
+
+  private _doubleWidth(): void {
+    const newWalls = new Map<string, Coord>();
+    const newBoxes = new Map<string, Coord>();
+    for (const { x, y } of this._walls.values()) {
+      newWalls.set(`${2 * x},${y}`, { x: 2 * x, y });
+      newWalls.set(`${2 * x + 1},${y}`, { x: 2 * x + 1, y });
+    }
+    for (const { x, y } of this._boxes.values()) {
+      newBoxes.set(`${2 * x},${y}`, { x: 2 * x, y });
+    }
+    this._width *= 2;
+    this._robot = { x: this._robot.x * 2, y: this._robot.y };
+    this._walls = newWalls;
+    this._boxes = newBoxes;
   }
 
   private _parseInstruction(instruction: string): void {
@@ -125,8 +109,8 @@ class Warehouse {
         const pos = `${x},${y}`;
         if (this._robot.x === x && this._robot.y === y) str += "@";
         else if (this._walls.has(pos)) str += "#";
-        else if (this._boxes.has(pos)) str += "O";
-        else str += ".";
+        else if (this._boxes.has(pos)) str += this._isDoubleWidth ? "[]" : "O";
+        else if (!this._isDoubleWidth || !this._boxes.has(`${x - 1},${y}`)) str += ".";
       }
       str += "\n";
     }
@@ -139,12 +123,6 @@ class Warehouse {
 }
 
 // Results
-console.time("Create");
-const warehouse = new Warehouse(layout);
-console.timeEnd("Create");
-console.time("Run");
-warehouse.run(instructions);
-console.timeEnd("Run");
-console.time("GPS");
-console.log(sum(warehouse.gps));
-console.timeEnd("GPS");
+const warehouse = new Warehouse(layout, true);
+warehouse._parseInstruction("<")
+console.log(warehouse.toString());
