@@ -25,28 +25,33 @@ const parseInput = (input: string[]): [WarehouseLayout, Instructions] => {
 
 const [layout, instructions] = parseInput(readFile(`${__dirname}/input.txt`, ["\n\n"]));
 
-// const [layout, instructions] = parseInput(
-//   `#######
-// #...#.#
-// #.....#
-// #..OO@#
-// #..O..#
-// #.....#
-// #######
+const [sampleLayout, sampleInstructions] = parseInput(
+  `##########
+#..O..O.O#
+#......O.#
+#.OO..O.O#
+#..O@..O.#
+#O#..O...#
+#O..O..O.#
+#.OO.O.OO#
+#....O...#
+##########
 
-// <vv<<^^<<^^`.split("\n\n")
-// );
-
-// Utils
-const swap2d = (arr: WarehouseLayout, p1: Coord, p2: Coord): void => {
-  const temp = arr[p1.y][p1.x];
-  arr[p1.y][p1.x] = arr[p2.y][p2.x];
-  arr[p2.y][p2.x] = temp;
-};
+<vv>^<v^>v>^vv^v>v<>v^v<v<^vv<<<^><<><>>v<vvv<>^v^>^<<<><<v<<<v^vv^v>^
+vvv<<^>^v^^><<>>><>^<<><^vv^^<>vvv<>><^^v>^>vv<>v<<<<v<^v>^<^^>>>^<v<v
+><>vv>v^v^<>><>>>><^^>vv>v<^^^>>v^v^<^^>v^^>v^<^v>v<>>v^v^<v>v^^<^^vv<
+<<v<^>>^^^^>>>v^<>vvv^><v<<<>^^^vv^<vvv>^>v<^^^^v<>^>vvvv><>>v^<<^^^^^
+^><^><>>><>^^<<^^v>>><^<v>^<vv>>v>>>^v><>^v><<<<v>>v<v<v>vvv>^<><<>^><
+^>><>^v<><^vvv<^^<><v<<<<<><^v<<<><<<^^<v<^^^><^>>^<v^><<<^>>^v<v^v<v^
+>^>>^v>vv>^<<^v<>><<><<v<<v><>v<^vv<<<>^^v^>^^>>><<^v>>v^v><^^>>^<>vv^
+<><^^>^^^<><vvvvv^v<v<<>^v<v>v<<^><<><<><<<^^<<<^<<>><<><^^^>^^<>^>v<>
+^^>vv<^v^v<vv>^<><v<^v>^^^>>>^^vvv^>vvv<>>>^<^>>>>>^<<^v>^vvv<>^<><<v>
+v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^`.split("\n\n")
+);
 
 // Part 1
 class Warehouse {
-  private _layout: WarehouseLayout = [];
+  public _layout: WarehouseLayout = [];
   private _robot: Coord = { x: -1, y: -1 };
 
   constructor(layout: WarehouseLayout, isDoubleWidth: boolean) {
@@ -73,24 +78,33 @@ class Warehouse {
     else if (char === ".") return true;
     else if (char === "O") return this._canMove(xx, yy, dx, dy);
     else if (dx === 0) {
-      return this._canMove(xx, yy, dx, dy) && this._canMove(xx + (char === "[" ? 1 : -1), yy, 0, 1);
-    } else {
-      return this._canMove(xx, yy + (char === "[" ? 1 : -1), 1, 0);
+      if (char === "[") return this._canMove(xx, yy, dx, dy) && this._canMove(xx - 1, yy, dx, dy);
+      else if (char === "]")
+        return this._canMove(xx, yy, dx, dy) && this._canMove(xx + 1, yy, dx, dy);
+    } else if (char === "]") {
+      return this._canMove(xx, yy - 1, dx, dy);
+    } else if (char === "[") {
+      return this._canMove(xx, yy + 1, dx, dy);
     }
+    return false;
   }
 
   private _move(x: number, y: number, dx: number, dy: number): void {
     const [xx, yy] = [x + dx, y + dy];
     const char = this._layout[yy][xx];
     if (char === "#") return;
-    else if (char === ".") swap2d(this._layout, { x, y }, { x: xx, y: yy });
-    else if (char === "O") {
+    else if (char === ".") {
+      [this._layout[y][x], this._layout[yy][xx]] = [this._layout[yy][xx], this._layout[y][x]];
+    } else if (char === "O") {
       this._move(xx, yy, dx, dy);
-      swap2d(this._layout, { x, y }, { x: xx, y: yy });
-    } else if (dx === 0) {
-      return;
+      [this._layout[y][x], this._layout[yy][xx]] = [this._layout[yy][xx], this._layout[y][x]];
+    } else if (dx !== 0) {
+      this._move(xx, yy, dx, dy);
+      [this._layout[y][x], this._layout[yy][xx]] = [this._layout[yy][xx], this._layout[y][x]];
     } else {
-      return;
+      this._move(xx, yy, dx, dy);
+      this._move(xx + (char === "[" ? 1 : -1), yy, dx, dy);
+      [this._layout[y][x], this._layout[yy][xx]] = [this._layout[yy][xx], this._layout[y][x]];
     }
   }
 
@@ -101,6 +115,8 @@ class Warehouse {
       this._move(x, y, dx, dy);
       this._robot = { x: x + dx, y: y + dy };
     }
+    console.log(this.toString());
+    console.log("\n\n");
   }
 
   public run(instructions: Instructions): void {
@@ -114,18 +130,33 @@ class Warehouse {
     const gps = [];
     for (let y = 0; y < this._layout.length; y++) {
       for (let x = 0; x < this._layout[y].length; x++) {
-        if (this._layout[y][x] === "O") gps.push(x + 100 * y);
+        if (this._layout[y][x] === "O" || this._layout[y][x] === "[") gps.push(x + 100 * y);
       }
     }
     return gps;
   }
 }
 
-// Results
-const warehouse = new Warehouse(layout, false);
-warehouse.run(instructions);
-console.log(sum(warehouse.gps));
+// // Results
+// const part1 = new Warehouse(layout, false);
+// part1.run(instructions);
+// console.log(`Part 1 still correct? > ${sum(part1.gps) === 1479679}`);
+
+const warehouse = new Warehouse(sampleLayout, true);
+
+warehouse._layout = `####################
+##[].......[].[][]##
+##[]...........[].##
+##[]........[][][]##
+##[]......[]....[]##
+##..##......[]....##
+##..[]............##
+##..@......[].[][]##
+##......[][]..[]..##
+####################`.split("\n").map(row => row.split(""));
+
+// warehouse.run(instructions);
 // console.log(warehouse.toString());
 // console.log("\n\n");
-// warehouse._parseInstruction("<");
-// console.log(warehouse.toString());
+// warehouse.run(sampleInstructions.slice(0, 2));
+console.log(sum(warehouse.gps));
