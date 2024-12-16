@@ -8,7 +8,7 @@ enum Dir {
   E,
   W
 }
-type Node = { x: number; y: number; dist: number; dir: Dir };
+type Node = { x: number; y: number; dist: number; dir: Dir; path: string[] };
 
 // Constants
 const POSSIBLE_DIRS = {
@@ -49,12 +49,14 @@ const sample = `#################
 
 // Part 1
 const dijkstra = (layout: string[][]) => {
-  let start: Node = { x: -1, y: -1, dist: 0, dir: Dir.E };
+  let start: Node = { x: -1, y: -1, dist: 0, dir: Dir.E, path: [] };
   let end: { x: number; y: number } = { x: -1, y: -1 };
+  let minDist = Infinity;
+  const seats = new Set<string>();
 
   for (let y = 0; y < layout.length; y++) {
     for (let x = 0; x < layout[y].length; x++) {
-      if (layout[y][x] === "S") start = { x, y, dist: 0, dir: Dir.E };
+      if (layout[y][x] === "S") start = { ...start, x, y };
       if (layout[y][x] === "E") end = { x, y };
     }
   }
@@ -63,23 +65,36 @@ const dijkstra = (layout: string[][]) => {
   const visited: Map<string, number> = new Map();
 
   while (!queue.isEmpty) {
-    const { x, y, dist, dir } = queue.pop()!;
-    if (x === end.x && y === end.y) return dist;
+    console.log(queue.size);
+    const { x, y, dist, dir, path } = queue.pop()!;
+    if (dist > minDist) continue;
+    if (x === end.x && y === end.y) {
+      if (dist < minDist) {
+        minDist = dist;
+        seats.clear();
+      }
+      if (dist === minDist) {
+        path.forEach(p => seats.add(p));
+      }
+      continue;
+    }
+
     for (const newDir of POSSIBLE_DIRS[dir]) {
       const [dx, dy] = MOVES[newDir];
       const [xx, yy] = [x + dx, y + dy];
       const newDist = dist + 1 + (newDir === dir ? 0 : 1000);
       if (layout[yy]?.[xx] === "#") continue;
-      if (visited.has(`${xx},${yy}`) && visited.get(`${xx},${yy}`)! <= newDist) continue;
-      visited.set(`${xx},${yy}`, newDist);
-      queue.add({ x: xx, y: yy, dist: newDist, dir: newDir });
+      if (visited.has(`${xx},${yy},${newDir}`) && visited.get(`${xx},${yy},${newDir}`)! < newDist) continue;
+      visited.set(`${xx},${yy},${newDir}`, newDist);
+      queue.add({ x: xx, y: yy, dist: newDist, dir: newDir, path: [...path, `${xx},${yy}`] });
     }
   }
-
-  return -1;
+  seats.add(`${start.x},${start.y}`);
+  return { dist: minDist, seats };
 };
 
 // Part 2
 
 // Results
-console.log(dijkstra(input));
+const { dist, seats } = dijkstra(input);
+console.log(dist, seats.size);
