@@ -23,106 +23,109 @@ const parseInput = (input: string[]): [WarehouseLayout, Instructions] => {
   ];
 };
 
-// const [layout, instructions] = parseInput(readFile(`${__dirname}/input.txt`, ["\n\n"]));
+const [layout, instructions] = parseInput(readFile(`${__dirname}/input.txt`, ["\n\n"]));
 
-const [layout, instructions] = parseInput(
-  `#######
-#...#.#
-#.....#
-#..OO@#
-#..O..#
-#.....#
-#######
+// const [layout, instructions] = parseInput(
+//   `#######
+// #...#.#
+// #.....#
+// #..OO@#
+// #..O..#
+// #.....#
+// #######
 
-<vv<<^^<<^^`.split("\n\n")
-);
+// <vv<<^^<<^^`.split("\n\n")
+// );
+
+// Utils
+const swap2d = (arr: WarehouseLayout, p1: Coord, p2: Coord): void => {
+  const temp = arr[p1.y][p1.x];
+  arr[p1.y][p1.x] = arr[p2.y][p2.x];
+  arr[p2.y][p2.x] = temp;
+};
 
 // Part 1
 class Warehouse {
-  private _width: number;
-  private _height: number;
+  private _layout: WarehouseLayout = [];
   private _robot: Coord = { x: -1, y: -1 };
-  private _walls: Map<string, Coord> = new Map();
-  private _boxes: Map<string, Coord> = new Map();
-  private _isDoubleWidth: boolean;
 
-  constructor(layout: WarehouseLayout, isDoubleWidth: boolean = false) {
-    this._isDoubleWidth = isDoubleWidth;
-    this._height = layout.length;
-    this._width = layout[0].length;
+  constructor(layout: WarehouseLayout, isDoubleWidth: boolean) {
     for (let y = 0; y < layout.length; y++) {
+      const row = [];
       for (let x = 0; x < layout[y].length; x++) {
-        const cell = layout[y][x];
-        if (cell === "#") this._walls.set(`${x},${y}`, { x, y });
-        else if (cell === "O") this._boxes.set(`${x},${y}`, { x, y });
-        else if (cell === "@") this._robot = { x, y };
+        const char = layout[y][x];
+        if (char === "@") {
+          this._robot = { x: isDoubleWidth ? 2 * x : x, y };
+          row.push("@", ...(isDoubleWidth ? ["."] : []));
+        } else if (char === "O" && isDoubleWidth) row.push("[", "]");
+        else if (char === "O") row.push("O");
+        else if (char === "#") row.push("#", ...(isDoubleWidth ? ["#"] : []));
+        else row.push(".", ...(isDoubleWidth ? ["."] : []));
       }
+      this._layout.push(row);
     }
-    if (isDoubleWidth) this._doubleWidth();
   }
 
-  private _doubleWidth(): void {
-    const newWalls = new Map<string, Coord>();
-    const newBoxes = new Map<string, Coord>();
-    for (const { x, y } of this._walls.values()) {
-      newWalls.set(`${2 * x},${y}`, { x: 2 * x, y });
-      newWalls.set(`${2 * x + 1},${y}`, { x: 2 * x + 1, y });
+  private _canMove(x: number, y: number, dx: number, dy: number): boolean {
+    const [xx, yy] = [x + dx, y + dy];
+    const char = this._layout[yy][xx];
+    if (char === "#") return false;
+    else if (char === ".") return true;
+    else if (char === "O") return this._canMove(xx, yy, dx, dy);
+    else if (dx === 0) {
+      return this._canMove(xx, yy, dx, dy) && this._canMove(xx + (char === "[" ? 1 : -1), yy, 0, 1);
+    } else {
+      return this._canMove(xx, yy + (char === "[" ? 1 : -1), 1, 0);
     }
-    for (const { x, y } of this._boxes.values()) {
-      newBoxes.set(`${2 * x},${y}`, { x: 2 * x, y });
-    }
-    this._width *= 2;
-    this._robot = { x: this._robot.x * 2, y: this._robot.y };
-    this._walls = newWalls;
-    this._boxes = newBoxes;
   }
 
-  private _parseInstruction(instruction: string): void {
-    if (DIR[instruction] === undefined) console.log(instruction);
+  private _move(x: number, y: number, dx: number, dy: number): void {
+    const [xx, yy] = [x + dx, y + dy];
+    const char = this._layout[yy][xx];
+    if (char === "#") return;
+    else if (char === ".") swap2d(this._layout, { x, y }, { x: xx, y: yy });
+    else if (char === "O") {
+      this._move(xx, yy, dx, dy);
+      swap2d(this._layout, { x, y }, { x: xx, y: yy });
+    } else if (dx === 0) {
+      return;
+    } else {
+      return;
+    }
+  }
+
+  public _parseInstruction(instruction: string): void {
     const { dx, dy } = DIR[instruction];
-    const [xx, yy] = [this._robot.x + dx, this._robot.y + dy];
-    let [bx, by] = [xx, yy];
-    if (this._walls.has(`${xx},${yy}`)) return;
-    while (this._boxes.has(`${bx},${by}`)) {
-      bx += dx;
-      by += dy;
-      if (this._walls.has(`${bx},${by}`)) return;
-    }
-    this._robot = { x: xx, y: yy };
-    while (bx !== xx || by !== yy) {
-      const [bx2, by2] = [bx, by];
-      bx -= dx;
-      by -= dy;
-      this._boxes.delete(`${bx},${by}`);
-      this._boxes.set(`${bx2},${by2}`, { x: bx2, y: by2 });
+    const { x, y } = this._robot;
+    if (this._canMove(x, y, dx, dy)) {
+      this._move(x, y, dx, dy);
+      this._robot = { x: x + dx, y: y + dy };
     }
   }
 
   public run(instructions: Instructions): void {
     for (const instruction of instructions) this._parseInstruction(instruction);
   }
-
   public toString(): string {
-    let str = "";
-    for (let y = 0; y < this._height; y++) {
-      for (let x = 0; x < this._width; x++) {
-        const pos = `${x},${y}`;
-        if (this._robot.x === x && this._robot.y === y) str += "@";
-        else if (this._walls.has(pos)) str += "#";
-        else if (this._boxes.has(pos)) str += this._isDoubleWidth ? "[]" : "O";
-        else if (!this._isDoubleWidth || !this._boxes.has(`${x - 1},${y}`)) str += ".";
-      }
-      str += "\n";
-    }
-    return str;
+    return this._layout.map(row => row.join("")).join("\n");
   }
 
   get gps(): number[] {
-    return Array.from(this._boxes.values()).map(({ x, y }) => x + 100 * y);
+    const gps = [];
+    for (let y = 0; y < this._layout.length; y++) {
+      for (let x = 0; x < this._layout[y].length; x++) {
+        if (this._layout[y][x] === "O") gps.push(x + 100 * y);
+      }
+    }
+    return gps;
   }
 }
 
 // Results
-const warehouse = new Warehouse(layout, true);
-warehouse._parseInstruction("<")
-console.log(warehouse.toString());
+const warehouse = new Warehouse(layout, false);
+warehouse.run(instructions);
+console.log(sum(warehouse.gps));
+// console.log(warehouse.toString());
+// console.log("\n\n");
+// warehouse._parseInstruction("<");
+// console.log(warehouse.toString());
