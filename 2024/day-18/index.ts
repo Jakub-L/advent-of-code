@@ -76,11 +76,13 @@ class MemorySpace {
   }
 
   public firstBlockingByte(startingCount: number = 1024): string {
-    console.log(this._allCorruptedBytes.length);
-    for (let i = startingCount; i < this._allCorruptedBytes.length; i++) {
-      if (this.traverse(i) === -1) return this._allCorruptedBytes[i - 1];
+    let [lower, upper] = [startingCount, this._allCorruptedBytes.length];
+    while (upper > lower) {
+      const i = Math.floor((upper + lower) / 2);
+      if (this.traverse(i) === -1) upper = i;
+      else lower = i + 1;
     }
-    return "";
+    return this._allCorruptedBytes[lower - 1];
   }
 }
 
@@ -88,4 +90,6 @@ class MemorySpace {
 const memorySpace = new MemorySpace(input);
 
 // console.log(memorySpace.traverse()); // 334
+console.time("part 2");
 console.log(memorySpace.firstBlockingByte());
+console.timeEnd("part 2");
