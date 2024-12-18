@@ -4,5 +4,4 @@ node_modules
 # Advent of Code-specific
 /2020/inputs/*
 /2021/inputs/*
-/2022/**/input.txt
-/2023/**/input.txt
+input.txt
