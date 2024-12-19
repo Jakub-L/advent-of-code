@@ -1,31 +1,37 @@
 import { readFile } from "@jakub-l/aoc-lib/input-parsing";
-
+import { sum } from "@jakub-l/aoc-lib/math";
 
 // Inputs
-// const [rawTowels, rawDesigns] = `r, wr, b, g, bwu, rb, gb, br
-//
-// brwrr
-// bggr
-// gbbr
-// rrbgbr
-// ubwu
-// bwurrg
-// brgr
-// bbrgwb`.split("\n\n");
-
-const [rawTowels, rawDesigns] = readFile(`${__dirname}/input.txt`, ["\n\n"]) as string[]
+const [rawTowels, rawDesigns] = readFile(`${__dirname}/input.txt`, ["\n\n"]) as string[];
 const towels: Set<string> = new Set(rawTowels.split(", "));
 const designs: string[] = rawDesigns.split("\n");
 
-// Part 1
-const isPossible = (design: string, towels: Set<string>) => {
-  if (towels.has(design) || design.length === 0) return true;
-  for (let i = 1; i < design.length; i++) {
+// Part 1 & 2
+/**
+ * Finds the number of arrangements of towels that can be used to form the given design. 
+ * @param {string} design - The towel design to make
+ * @param {Set<string>} towels - A set of available towels
+ * @param {Map<string, number>} memo - A memoized cache of the number of arrangements for each design
+ * @returns {number} The number of arrangements of towels that can be used to form the given design
+ */
+const getArrangements = (
+  design: string,
+  towels: Set<string>,
+  memo: Map<string, number> = new Map()
+): number => {
+  if (memo.has(design)) return memo.get(design)!;
+  if (design.length === 0) return 1;
+
+  let count = 0;
+  for (let i = 1; i <= design.length; i++) {
     const [prefix, suffix] = [design.slice(0, i), design.slice(i)];
-    if (towels.has(prefix) && isPossible(suffix, towels)) return true
+    if (towels.has(prefix)) count += getArrangements(suffix, towels, memo);
   }
-  return false;
+  memo.set(design, count);
+  return count;
 };
 
-// console.log(towels, designs)
-console.log(designs.filter(design => isPossible(design, towels)).length);
+// Results
+const arrangementCounts = designs.map(design => getArrangements(design, towels));
+console.log(`Part 1: ${arrangementCounts.filter(count => count > 0).length}`);
+console.log(`Part 2: ${sum(arrangementCounts)}`);
