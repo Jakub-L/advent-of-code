@@ -3,16 +3,15 @@ import { sum } from "@jakub-l/aoc-lib/math";
 
 // Constants
 const DIR: Record<string, { dx: number; dy: number }> = {
-  "^": { dx: 0, dy: -1 },
-  v: { dx: 0, dy: 1 },
-  "<": { dx: -1, dy: 0 },
-  ">": { dx: 1, dy: 0 }
+  "^": { dx: -1, dy: 0 },
+  v: { dx: 1, dy: 0 },
+  "<": { dx: 0, dy: -1 },
+  ">": { dx: 0, dy: 1 }
 };
 
 // Types
 type WarehouseLayout = string[][];
 type Instructions = string[];
-type Coord = { x: number; y: number };
 
 // Input
 const parseInput = (input: string[]): [WarehouseLayout, Instructions] => {
@@ -25,138 +24,81 @@ const parseInput = (input: string[]): [WarehouseLayout, Instructions] => {
 
 const [layout, instructions] = parseInput(readFile(`${__dirname}/input.txt`, ["\n\n"]));
 
-const [sampleLayout, sampleInstructions] = parseInput(
-  `##########
-#..O..O.O#
-#......O.#
-#.OO..O.O#
-#..O@..O.#
-#O#..O...#
-#O..O..O.#
-#.OO.O.OO#
-#....O...#
-##########
-
-<vv>^<v^>v>^vv^v>v<>v^v<v<^vv<<<^><<><>>v<vvv<>^v^>^<<<><<v<<<v^vv^v>^
-vvv<<^>^v^^><<>>><>^<<><^vv^^<>vvv<>><^^v>^>vv<>v<<<<v<^v>^<^^>>>^<v<v
-><>vv>v^v^<>><>>>><^^>vv>v<^^^>>v^v^<^^>v^^>v^<^v>v<>>v^v^<v>v^^<^^vv<
-<<v<^>>^^^^>>>v^<>vvv^><v<<<>^^^vv^<vvv>^>v<^^^^v<>^>vvvv><>>v^<<^^^^^
-^><^><>>><>^^<<^^v>>><^<v>^<vv>>v>>>^v><>^v><<<<v>>v<v<v>vvv>^<><<>^><
-^>><>^v<><^vvv<^^<><v<<<<<><^v<<<><<<^^<v<^^^><^>>^<v^><<<^>>^v<v^v<v^
->^>>^v>vv>^<<^v<>><<><<v<<v><>v<^vv<<<>^^v^>^^>>><<^v>>v^v><^^>>^<>vv^
-<><^^>^^^<><vvvvv^v<v<<>^v<v>v<<^><<><<><<<^^<<<^<<>><<><^^^>^^<>^>v<>
-^^>vv<^v^v<vv>^<><v<^v>^^^>>>^^vvv^>vvv<>>>^<^>>>>>^<<^v>^vvv<>^<><<v>
-v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^`.split("\n\n")
-);
-
-// Part 1
-class Warehouse {
-  public _layout: WarehouseLayout = [];
-  private _robot: Coord = { x: -1, y: -1 };
-
-  constructor(layout: WarehouseLayout, isDoubleWidth: boolean) {
-    for (let y = 0; y < layout.length; y++) {
-      const row = [];
-      for (let x = 0; x < layout[y].length; x++) {
-        const char = layout[y][x];
-        if (char === "@") {
-          this._robot = { x: isDoubleWidth ? 2 * x : x, y };
-          row.push("@", ...(isDoubleWidth ? ["."] : []));
-        } else if (char === "O" && isDoubleWidth) row.push("[", "]");
-        else if (char === "O") row.push("O");
-        else if (char === "#") row.push("#", ...(isDoubleWidth ? ["#"] : []));
-        else row.push(".", ...(isDoubleWidth ? ["."] : []));
-      }
-      this._layout.push(row);
+// Part 1 & 2
+const doubleWidth = (layout: WarehouseLayout): WarehouseLayout => {
+  const newLayout: WarehouseLayout = [];
+  for (let y = 0; y < layout.length; y++) {
+    const row = [];
+    for (let x = 0; x < layout[y].length; x++) {
+      const char = layout[y][x];
+      if (char === "#") row.push("#", "#");
+      else if (char === "O") row.push("[", "]");
+      else row.push(char, ".");
     }
+    newLayout.push(row);
   }
+  return newLayout;
+};
 
-  private _canMove(x: number, y: number, dx: number, dy: number): boolean {
-    const [xx, yy] = [x + dx, y + dy];
-    const char = this._layout[yy][xx];
-    if (char === "#") return false;
-    else if (char === ".") return true;
-    else if (char === "O") return this._canMove(xx, yy, dx, dy);
-    else if (dx === 0) {
-      if (char === "[") return this._canMove(xx, yy, dx, dy) && this._canMove(xx - 1, yy, dx, dy);
-      else if (char === "]")
-        return this._canMove(xx, yy, dx, dy) && this._canMove(xx + 1, yy, dx, dy);
-    } else if (char === "]") {
-      return this._canMove(xx, yy - 1, dx, dy);
-    } else if (char === "[") {
-      return this._canMove(xx, yy + 1, dx, dy);
-    }
-    return false;
-  }
+const solve = (layout: WarehouseLayout, instructions: Instructions): number => {
+  const [width, height] = [layout[0].length, layout.length];
 
-  private _move(x: number, y: number, dx: number, dy: number): void {
-    const [xx, yy] = [x + dx, y + dy];
-    const char = this._layout[yy][xx];
-    if (char === "#") return;
-    else if (char === ".") {
-      [this._layout[y][x], this._layout[yy][xx]] = [this._layout[yy][xx], this._layout[y][x]];
-    } else if (char === "O") {
-      this._move(xx, yy, dx, dy);
-      [this._layout[y][x], this._layout[yy][xx]] = [this._layout[yy][xx], this._layout[y][x]];
-    } else if (dx !== 0) {
-      this._move(xx, yy, dx, dy);
-      [this._layout[y][x], this._layout[yy][xx]] = [this._layout[yy][xx], this._layout[y][x]];
-    } else {
-      this._move(xx, yy, dx, dy);
-      this._move(xx + (char === "[" ? 1 : -1), yy, dx, dy);
-      [this._layout[y][x], this._layout[yy][xx]] = [this._layout[yy][xx], this._layout[y][x]];
-    }
-  }
-
-  public _parseInstruction(instruction: string): void {
-    const { dx, dy } = DIR[instruction];
-    const { x, y } = this._robot;
-    if (this._canMove(x, y, dx, dy)) {
-      this._move(x, y, dx, dy);
-      this._robot = { x: x + dx, y: y + dy };
-    }
-    console.log(this.toString());
-    console.log("\n\n");
-  }
-
-  public run(instructions: Instructions): void {
-    for (const instruction of instructions) this._parseInstruction(instruction);
-  }
-  public toString(): string {
-    return this._layout.map(row => row.join("")).join("\n");
-  }
-
-  get gps(): number[] {
-    const gps = [];
-    for (let y = 0; y < this._layout.length; y++) {
-      for (let x = 0; x < this._layout[y].length; x++) {
-        if (this._layout[y][x] === "O" || this._layout[y][x] === "[") gps.push(x + 100 * y);
+  // Find the robot
+  let [rx, ry] = [-1, -1];
+  for (let x = 0; x < height; x++) {
+    for (let y = 0; y < width; y++) {
+      if (layout[x][y] === "@") {
+        [rx, ry] = [x, y];
+        break;
       }
     }
-    return gps;
   }
-}
+
+  for (const instr of instructions) {
+    const { dx, dy } = DIR[instr];
+    const toMove = [[rx, ry]];
+    const inspected = new Set<string>(`${rx},${ry}`);
+    let isImpossible = false;
+    for (let i = 0; i < toMove.length; i++) {
+      const [x, y] = toMove[i];
+      const [nx, ny] = [x + dx, y + dy];
+      const char = layout[nx][ny];
+      if (char === "#") {
+        isImpossible = true;
+        break;
+      }
+      if (["[", "]", "O"].includes(char)) {
+        if (!inspected.has(`${nx},${ny}`)) {
+          toMove.push([nx, ny]);
+          inspected.add(`${nx},${ny}`);
+        }
+        if (char === "[" && !inspected.has(`${nx},${ny + 1}`)) {
+          toMove.push([nx, ny + 1]);
+          inspected.add(`${nx},${ny + 1}`);
+        }
+        if (char === "]" && !inspected.has(`${nx},${ny - 1}`)) {
+          toMove.push([nx, ny - 1]);
+          inspected.add(`${nx},${ny - 1}`);
+        }
+      }
+    }
+    if (isImpossible) continue;
+    const newLayout = structuredClone(layout);
+    for (const [x, y] of toMove) newLayout[x][y] = ".";
+    for (const [x, y] of toMove) newLayout[x + dx][y + dy] = layout[x][y];
+    layout = newLayout;
+    [rx, ry] = [rx + dx, ry + dy];
+  }
+
+  let gps = 0;
+  for (let x = 0; x < height; x++) {
+    for (let y = 0; y < width; y++) {
+      if (["[", "O"].includes(layout[x][y])) gps += 100 * x + y;
+    }
+  }
+  return gps;
+};
 
 // // Results
-// const part1 = new Warehouse(layout, false);
-// part1.run(instructions);
-// console.log(`Part 1 still correct? > ${sum(part1.gps) === 1479679}`);
-
-const warehouse = new Warehouse(sampleLayout, true);
-
-warehouse._layout = `####################
-##[].......[].[][]##
-##[]...........[].##
-##[]........[][][]##
-##[]......[]....[]##
-##..##......[]....##
-##..[]............##
-##..@......[].[][]##
-##......[][]..[]..##
-####################`.split("\n").map(row => row.split(""));
-
-// warehouse.run(instructions);
-// console.log(warehouse.toString());
-// console.log("\n\n");
-// warehouse.run(sampleInstructions.slice(0, 2));
-console.log(sum(warehouse.gps));
+// console.log(solve(sampleLayout, instructions));
+console.log(solve(doubleWidth(layout), instructions));
