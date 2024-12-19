@@ -14,6 +14,11 @@ type WarehouseLayout = string[][];
 type Instructions = string[];
 
 // Input
+/**
+ * Converts the input string into a tuple of warehouse layout and instructions
+ * @param {string[]} input - Input string
+ * @returns {[WarehouseLayout, Instructions]} Tuple of warehouse layout and instructions
+ */
 const parseInput = (input: string[]): [WarehouseLayout, Instructions] => {
   const [rawLayout, rawInstructions] = input;
   return [
@@ -25,6 +30,11 @@ const parseInput = (input: string[]): [WarehouseLayout, Instructions] => {
 const [layout, instructions] = parseInput(readFile(`${__dirname}/input.txt`, ["\n\n"]));
 
 // Part 1 & 2
+/**
+ * Doubles the width of the warehouse layout
+ * @param {WarehouseLayout} layout - The original warehouse layout
+ * @returns {WarehouseLayout} The warehouse layout with doubled width
+ */
 const doubleWidth = (layout: WarehouseLayout): WarehouseLayout => {
   const newLayout: WarehouseLayout = [];
   for (let y = 0; y < layout.length; y++) {
@@ -40,6 +50,12 @@ const doubleWidth = (layout: WarehouseLayout): WarehouseLayout => {
   return newLayout;
 };
 
+/**
+ * Processes through instructions and moves the robot accordingly
+ * @param {WarehouseLayout} layout - The starting warehouse layout
+ * @param {Instructions} instructions - The instructions for the robot
+ * @returns {number} The sum of GPS coordinates
+ */
 const solve = (layout: WarehouseLayout, instructions: Instructions): number => {
   const [width, height] = [layout[0].length, layout.length];
 
@@ -54,6 +70,7 @@ const solve = (layout: WarehouseLayout, instructions: Instructions): number => {
     }
   }
 
+  // Iterate through the instructions
   for (const instr of instructions) {
     const { dx, dy } = DIR[instr];
     const toMove = [[rx, ry]];
@@ -90,6 +107,7 @@ const solve = (layout: WarehouseLayout, instructions: Instructions): number => {
     [rx, ry] = [rx + dx, ry + dy];
   }
 
+  // Calculate the sum of GPS coordinates
   let gps = 0;
   for (let x = 0; x < height; x++) {
     for (let y = 0; y < width; y++) {
@@ -99,6 +117,6 @@ const solve = (layout: WarehouseLayout, instructions: Instructions): number => {
   return gps;
 };
 
-// // Results
-// console.log(solve(sampleLayout, instructions));
-console.log(solve(doubleWidth(layout), instructions));
+// Results
+console.log(`Part 1: ${solve(layout, instructions)}`);
+console.log(`Part 2: ${solve(doubleWidth(layout), instructions)}`);
