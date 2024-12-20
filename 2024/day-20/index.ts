@@ -32,6 +32,8 @@ const sample = `###############
 const input: string[][] = readFile(`${__dirname}/input.txt`, ["\n", ""]) as string[][];
 
 // Part 1
+const manhattan = (a: Coord, b: Coord): number => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+
 class Race {
   public _layout: string[][];
   public _start: Coord = { x: -1, y: -1 };
@@ -49,7 +51,6 @@ class Race {
       }
     }
     this._getDistances();
-    this._findShortcuts();
   }
 
   private _getDistances(): void {
@@ -70,33 +71,57 @@ class Race {
     }
   }
 
-  private _checkTrackForShortcut(start: Node): void {
-    const { x, y } = start;
-    const walls: Coord[] = [];
-    for (const [dx, dy] of DIR) {
-      const [nx, ny] = [x + dx, y + dy];
-      if (!this._track.has(`${nx},${ny}`)) walls.push({ x: nx, y: ny });
-    }
-    for (const { x: wx, y: wy } of walls) {
+  private _isInBounds(x: number, y: number): boolean {
+    return x >= 0 && x < this._layout[0].length && y >= 0 && y < this._layout.length;
+  }
+
+  private _findDistance(start: Coord, end: Coord): number {
+    const queue = new MinHeap<Node>([{ ...start, dist: 0 }], e => e.dist);
+    const visited = new Set<string>();
+    while (!queue.isEmpty) {
+      const { x, y, dist } = queue.pop()!;
+      if (x === end.x && y === end.y) return dist;
+      if (visited.has(`${x},${y}`)) continue;
+      visited.add(`${x},${y}`);
       for (const [dx, dy] of DIR) {
-        const [nx, ny] = [wx + dx, wy + dy];
-        if (this._track.has(`${nx},${ny}`) && !(nx === x && ny === y)) {
-          const end = this._track.get(`${nx},${ny}`)!;
-          const saving = end.dist - start.dist - 2;
-          if (saving > 0) {
-            const id = `(${x},${y})->(${wx},${wy})`;
-            if (!this._shortcuts.has(id) || this._shortcuts.get(id)! > saving) {
-              this._shortcuts.set(id, saving);
-            }
-          }
+        const [nx, ny] = [x + dx, y + dy];
+        if (nx === end.x && ny === end.y) return dist + 1;
+        if (this._isInBounds(nx, ny) && !this._track.has(`${nx},${ny}`)) {
+          queue.add({ x: nx, y: ny, dist: dist + 1 });
+        }
+      }
+    }
+
+    return Infinity;
+  }
+
+  public findShortcuts(cheatLength: number): void {
+    const sortedTrack = [...this._track.values()].sort((a, b) => a.dist - b.dist);
+    for (let i = 0; i < sortedTrack.length; i++) {
+      for (let j = i + 2; j < sortedTrack.length; j++) {
+        const [start, end] = [sortedTrack[i], sortedTrack[j]];
+        if (manhattan(start, end) > cheatLength) continue;
+        const dist = this._findDistance(start, end);
+        const saving = end.dist - start.dist - dist;
+        const id = `(${start.x},${start.y})->(${end.x},${end.y})`;
+        if (dist <= cheatLength && saving > 0) {
+          this._shortcuts.set(id, saving);
         }
       }
     }
   }
 
-  private _findShortcuts(): void {
-    for (const startTrack of this._track.values()) {
-      this._checkTrackForShortcut(startTrack);
+  public debug(): void {
+    const knowns = [50, 52, 54, 56, 58, 60, 62, 64, 66, 68, 70, 72, 74, 76];
+    const expected = [32, 31, 29, 39, 25, 23, 20, 19, 12, 14, 12, 22, 4, 3];
+    const c = new Counter();
+    for (const s of this._shortcuts.values()) c.add(s);
+    for (let i = 0; i < knowns.length; i++) {
+      console.log(
+        `${knowns[i]} - Expected: ${expected[i]}, Found: ${c.get(knowns[i])} (${
+          c.get(knowns[i]) === expected[i]
+        })`
+      );
     }
   }
 
@@ -107,4 +132,9 @@ class Race {
 
 // Results
 const race = new Race(input);
-console.log(race.shortcutCount(100))
+// const race = new Race(sample);
+// console.log(race._track.size)
+race.findShortcuts(20);
+console.log(race.shortcutCount(100));
+// console.log(race.debug());
+// console.log(race._shortcuts);
