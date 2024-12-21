@@ -65,6 +65,15 @@ const DELTA: Record<string, { dx: number; dy: number }> = {
 // Input
 const input: string[] = readFile(`${__dirname}/input.txt`) as string[];
 
+//prettier-ignore
+const sample = [
+  { pattern: "029A", expected: 68 },
+  { pattern: "980A", expected: 60 },
+  { pattern: "179A", expected: 68 },
+  { pattern: "456A", expected: 64 },
+  { pattern: "379A", expected: 64 }
+]
+
 // Part 1
 const robotMemo = new Map<string, number>();
 const dirpadMemo = new Map<string, number>();
@@ -99,7 +108,7 @@ const findBestDirpadMove = (start: Coord, end: Coord, depth: number): number => 
   while (!queue.isEmpty) {
     const { x, y, path } = queue.dequeue();
     if (x === end.x && y === end.y) {
-      result = Math.min(result, findBestRobotMovement(path, depth - 1));
+      result = Math.min(result, findBestRobotMovement(`${path}A`, depth - 1));
     } else {
       for (const [char, { dx, dy }] of Object.entries(DELTA)) {
         if (isCloser(x, end.x, dx) || isCloser(y, end.y, dy)) {
@@ -182,4 +191,9 @@ const findShortestManualPattern = (pattern: string, depth: number = 3): number =
   return result;
 };
 
-console.log(findShortestManualPattern("029A", 3));
+// Results
+for (const { pattern, expected } of sample) {
+  const result = findShortestManualPattern(pattern);
+  console.log(result, expected, result === expected);
+}
+
