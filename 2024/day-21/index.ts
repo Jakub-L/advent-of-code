@@ -40,6 +40,18 @@ const sample: string[] = ["029A", "980A", "179A", "456A", "379A"];
 const numpadMemo = new Map<string, number>();
 const dirpadMemo = new Map<string, number>();
 
+/**
+ * Calculates the cheapest move from one position to another on a numpad.
+ * "Cheapest" is defined as the path with the fewest moves for all the robots
+ * in the stack.
+ *
+ * @param {Position} start - The starting position
+ * @param {Position} end - The ending position
+ * @param {number} robots - The number of robots
+ * @param {Position} invalid - The invalid position, which casues the robot to
+ *                   immediately terminate.
+ * @returns {number} The number of moves required to move from start to end
+ */
 const cheapestNumpadMove = (
   start: Position,
   end: Position,
@@ -65,19 +77,36 @@ const cheapestNumpadMove = (
   return result;
 };
 
-const bestRobot = (path: string, depth: number): number => {
-  if (depth === 1) return path.length;
+/**
+ * Finds the best robot's move to complete a move on a directional pad.
+ * Accounts for the number of robots in the stack.
+ * @param {string} path - Sequence of moves in the form of <, >, ^, v and A
+ * @param {number} robots - The number of robots in the stack
+ * @returns {number} The number of moves required to complete the path
+ */
+const bestRobot = (path: string, robots: number): number => {
+  if (robots === 1) return path.length;
   let result = 0;
   let start = DIRPAD["A"];
   const invalid = DIRPAD["Invalid"];
   for (const val of path) {
     const end = DIRPAD[val];
-    result += cheapestDirpadMove(start, end, depth - 1, invalid);
+    result += cheapestDirpadMove(start, end, robots - 1, invalid);
     start = end;
   }
   return result;
 };
 
+/**
+ * Calculates the cheapest move for a robot on a directional pad.
+ *
+ * @param {Position} start - The starting position.
+ * @param {Position} end - The target position.
+ * @param {number} robots - The number of robots
+ * @param {Position} invalid - The invalid position, which casues the robot to
+ *                   immediately terminate.
+ * @returns {number} - The minimum cost to move.
+ */
 const cheapestDirpadMove = (
   start: Position,
   end: Position,
@@ -104,29 +133,39 @@ const cheapestDirpadMove = (
   return result;
 };
 
-const shortestManualSequence = (value: string, robotCount: number): number => {
+/**
+ * Calculates the length of the shortest manual sequence required to enter
+ * a door code.
+ *
+ * @param {string} code - The door code
+ * @param {number} [robotCount=3] - The number of robots
+ * @returns {number} The length of the shortest manual sequence
+ */
+const shortestManualSequence = (code: string, robotCount: number): number => {
   const invalid = NUMPAD["Invalid"];
   let result = 0;
   let start = NUMPAD["A"];
-  for (const val of value) {
-    const end = NUMPAD[val];
+  for (const char of code) {
+    const end = NUMPAD[char];
     result += cheapestNumpadMove(start, end, robotCount, invalid)!;
     start = end;
   }
   return result;
 };
 
-const complexity = (value: string, robotCount: number = 3): number => {
-  return parseInt(value, 10) * shortestManualSequence(value, robotCount);
+/**
+ * Calculates the complexity of a door code. Complexity is defined as the
+ * product of the door code numeric value and the shortest manual sequence
+ * required to enter the sequence.
+ *
+ * @param {string} code - The door code
+ * @param {number} [robotCount=3] - The number of robots
+ * @returns {number} The complexity of the door code
+ */
+const complexity = (code: string, robotCount: number = 3): number => {
+  return parseInt(code, 10) * shortestManualSequence(code, robotCount);
 };
 
 // Results
-// const expectedSampleResult = [68, 60, 68, 64, 64];
-
-// for (let i = 0; i < sample.length; i++) {
-//   const result = shortestManualSequence(sample[i]);
-//   console.log(result, result === expectedSampleResult[i]);
-// }
-
-console.log(sum(input.map(code => complexity(code))));
-console.log(sum(input.map(code => complexity(code, 26))));
+console.log(`Part 1: ${sum(input.map(code => complexity(code)))}`);
+console.log(`Part 2: ${sum(input.map(code => complexity(code, 26)))}`);
