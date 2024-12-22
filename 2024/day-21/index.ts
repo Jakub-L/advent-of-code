@@ -37,12 +37,17 @@ const input: string[] = readFile(`${__dirname}/input.txt`) as string[];
 const sample: string[] = ["029A", "980A", "179A", "456A", "379A"];
 
 // Part 1 & 2
+const numpadMemo = new Map<string, number>();
+const dirpadMemo = new Map<string, number>();
+
 const cheapestNumpadMove = (
   start: Position,
   end: Position,
   robots: number,
   invalid: Position
-): number | null => {
+): number => {
+  const id = `${start.x},${start.y},${end.x},${end.y},${robots}`;
+  if (numpadMemo.has(id)) return numpadMemo.get(id)!;
   let result = Infinity;
   const queue = new Queue<Node>([{ ...start, path: "" }]);
   while (!queue.isEmpty) {
@@ -56,6 +61,7 @@ const cheapestNumpadMove = (
       else if (y > end.y) queue.enqueue({ x, y: y - 1, path: `${path}^` });
     }
   }
+  numpadMemo.set(id, result);
   return result;
 };
 
@@ -78,6 +84,8 @@ const cheapestDirpadMove = (
   robots: number,
   invalid: Position
 ): number => {
+  const id = `${start.x},${start.y},${end.x},${end.y},${robots}`;
+  if (dirpadMemo.has(id)) return dirpadMemo.get(id)!;
   let result = Infinity;
   const queue = new Queue<Node>([{ ...start, path: "" }]);
 
@@ -92,10 +100,11 @@ const cheapestDirpadMove = (
       else if (y > end.y) queue.enqueue({ x, y: y - 1, path: `${path}^` });
     }
   }
+  dirpadMemo.set(id, result);
   return result;
 };
 
-const shortestManualSequence = (value: string, robotCount: number = 3): number => {
+const shortestManualSequence = (value: string, robotCount: number): number => {
   const invalid = NUMPAD["Invalid"];
   let result = 0;
   let start = NUMPAD["A"];
@@ -107,7 +116,9 @@ const shortestManualSequence = (value: string, robotCount: number = 3): number =
   return result;
 };
 
-const complexity = (value: string): number => parseInt(value, 10) * shortestManualSequence(value);
+const complexity = (value: string, robotCount: number = 3): number => {
+  return parseInt(value, 10) * shortestManualSequence(value, robotCount);
+};
 
 // Results
 // const expectedSampleResult = [68, 60, 68, 64, 64];
@@ -117,4 +128,5 @@ const complexity = (value: string): number => parseInt(value, 10) * shortestManu
 //   console.log(result, result === expectedSampleResult[i]);
 // }
 
-console.log(sum(input.map(complexity)));
+console.log(sum(input.map(code => complexity(code))));
+console.log(sum(input.map(code => complexity(code, 26))));
