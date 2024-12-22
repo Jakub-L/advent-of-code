@@ -1,5 +1,6 @@
 // Types
 
+import { Counter } from "@jakub-l/aoc-lib/collections";
 import { readFile } from "@jakub-l/aoc-lib/input-parsing";
 import { sum } from "@jakub-l/aoc-lib/math";
 
@@ -31,6 +32,37 @@ const rotateSecret = (start: bigint, count: number): number => {
   }
   return Number(secret);
 };
+
+// Part 2
+const getPrices = (start: bigint, count: number): { prices: number[]; diffs: number[] } => {
+  let secret = start;
+  const prices = [Number(start) % 10];
+  const diffs = [];
+  for (let i = 1; i < count; i++) {
+    secret = nextSecret(secret);
+    prices.push(Number(secret) % 10);
+    diffs.push(prices[i] - prices[i - 1]);
+  }
+  return { prices, diffs };
+};
+
+const getBestSale = (startSecrets: bigint[], count: number): number => {
+  const total = new Counter();
+  for (const start of startSecrets) {
+    const instructionCounter = new Counter();
+    const { prices, diffs } = getPrices(start, count);
+    for (let i = 0; i < diffs.length - 3; i++) {
+      const instr = diffs.slice(i, i + 4).join(",");
+      if (instructionCounter.get(instr) === 0) {
+        instructionCounter.set(instr, prices[i + 4]);
+      }
+    }
+    total.combine(instructionCounter);
+  }
+  console.log(total.mostCommon(1));
+
+  return 0;
+};
 // Results
-// console.log(sum(sample.map(n => rotateSecret(n, 2000))));
-console.log(sum(input.map(n => rotateSecret(n, 2000))));
+// console.log(sum(input.map(n => rotateSecret(n, 2000))));
+console.log(getBestSale(input, 2000));
