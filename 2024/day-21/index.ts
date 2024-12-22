@@ -1,29 +1,14 @@
 import { Queue } from "@jakub-l/aoc-lib/data-structures";
 import { readFile } from "@jakub-l/aoc-lib/input-parsing";
+import { sum } from "@jakub-l/aoc-lib/math";
 
 // Types
-type Coord = { x: number; y: number };
-type Button = { x: number; y: number; val: string };
-type Path = { x: number; y: number; path: string };
+type Position = { x: number; y: number };
+type Node = { x: number; y: number; path: string };
+type Pad = Record<string, Position>;
 
 // Constants
-/** Dictionary of (x,y) coordinates and the numeric keypad buttons at that location */
-const LOC_TO_NUM: Record<string, Button> = {
-  "0,0": { x: 0, y: 0, val: "7" },
-  "1,0": { x: 1, y: 0, val: "8" },
-  "2,0": { x: 2, y: 0, val: "9" },
-  "0,1": { x: 0, y: 1, val: "4" },
-  "1,1": { x: 1, y: 1, val: "5" },
-  "2,1": { x: 2, y: 1, val: "6" },
-  "0,2": { x: 0, y: 2, val: "1" },
-  "1,2": { x: 1, y: 2, val: "2" },
-  "2,2": { x: 2, y: 2, val: "3" },
-  "1,3": { x: 1, y: 3, val: "0" },
-  "2,3": { x: 2, y: 3, val: "A" }
-};
-
-/** Dictionary of numeric keypad buttons and their (x,y) coordinates */
-const NUM_TO_LOC: Record<string, Coord> = {
+const NUMPAD: Pad = {
   "7": { x: 0, y: 0 },
   "8": { x: 1, y: 0 },
   "9": { x: 2, y: 0 },
@@ -33,21 +18,13 @@ const NUM_TO_LOC: Record<string, Coord> = {
   "1": { x: 0, y: 2 },
   "2": { x: 1, y: 2 },
   "3": { x: 2, y: 2 },
+  Invalid: { x: 0, y: 3 },
   "0": { x: 1, y: 3 },
   A: { x: 2, y: 3 }
 };
 
-/** Dictionary of (x,y) coordinates and the directional buttons at that location */
-const LOC_TO_DIR: Record<string, Button> = {
-  "1,0": { x: 1, y: 0, val: "^" },
-  "2,0": { x: 2, y: 0, val: "A" },
-  "0,1": { x: 0, y: 1, val: "<" },
-  "1,1": { x: 1, y: 1, val: "v" },
-  "2,1": { x: 2, y: 1, val: ">" }
-};
-
-/** Dictionary of directional buttons and their (x,y) coordinates */
-const DIR_TO_LOC: Record<string, Coord> = {
+const DIRPAD: Pad = {
+  Invalid: { x: 0, y: 0 },
   "^": { x: 1, y: 0 },
   A: { x: 2, y: 0 },
   "<": { x: 0, y: 1 },
@@ -55,145 +32,89 @@ const DIR_TO_LOC: Record<string, Coord> = {
   ">": { x: 2, y: 1 }
 };
 
-const DELTA: Record<string, { dx: number; dy: number }> = {
-  "^": { dx: 0, dy: -1 },
-  v: { dx: 0, dy: 1 },
-  "<": { dx: -1, dy: 0 },
-  ">": { dx: 1, dy: 0 }
-};
-
 // Input
 const input: string[] = readFile(`${__dirname}/input.txt`) as string[];
+const sample: string[] = ["029A", "980A", "179A", "456A", "379A"];
 
-//prettier-ignore
-const sample = [
-  { pattern: "029A", expected: 68 },
-  { pattern: "980A", expected: 60 },
-  { pattern: "179A", expected: 68 },
-  { pattern: "456A", expected: 64 },
-  { pattern: "379A", expected: 64 }
-]
-
-// Part 1
-const robotMemo = new Map<string, number>();
-const dirpadMemo = new Map<string, number>();
-
-/**
- * Returns whether a given delta (`change`) actually moves `start` closer to `dest`.
- *
- * @param start - The current coordinate (x or y)
- * @param dest  - The target coordinate (x or y)
- * @param change - How much we're moving (+1, -1, or 0)
- */
-const isCloser = (start: number, dest: number, change: number): boolean => {
-  return (change < 0 && dest < start) || (change > 0 && dest > start);
-};
-
-/**
- * Finds the best sequence of directional commands to move between two locations.
- *
- * @param {Coord} start - The starting location
- * @param {Coord} end - The ending location
- * @param {number} depth - The number of layers between the numpad and manual inputs
- * @returns {number} The minimum number of steps to go from start to end
- */
-const findBestDirpadMove = (start: Coord, end: Coord, depth: number): number => {
-  // console.log("findBestDirpadMove");
-
-  const id = `${start.x},${start.y}-${end.x},${end.y}-${depth}`;
-  if (dirpadMemo.has(id)) return dirpadMemo.get(id)!;
-
+// Part 1 & 2
+const cheapestNumpadMove = (
+  start: Position,
+  end: Position,
+  robots: number,
+  invalid: Position
+): number | null => {
   let result = Infinity;
-  const queue = new Queue<Path>([{ ...start, path: "" }]);
+  const queue = new Queue<Node>([{ ...start, path: "" }]);
   while (!queue.isEmpty) {
     const { x, y, path } = queue.dequeue();
     if (x === end.x && y === end.y) {
-      result = Math.min(result, findBestRobotMovement(`${path}A`, depth - 1));
-    } else {
-      for (const [char, { dx, dy }] of Object.entries(DELTA)) {
-        if (isCloser(x, end.x, dx) || isCloser(y, end.y, dy)) {
-          queue.enqueue({ x: x + dx, y: y + dy, path: path + char });
-        }
-      }
+      result = Math.min(result, bestRobot(`${path}A`, robots));
+    } else if (x !== invalid.x || y !== invalid.y) {
+      if (x < end.x) queue.enqueue({ x: x + 1, y, path: `${path}>` });
+      else if (x > end.x) queue.enqueue({ x: x - 1, y, path: `${path}<` });
+      if (y < end.y) queue.enqueue({ x, y: y + 1, path: `${path}v` });
+      else if (y > end.y) queue.enqueue({ x, y: y - 1, path: `${path}^` });
     }
   }
-
-  dirpadMemo.set(id, result);
   return result;
 };
 
-/**
- * Finds the best robot movement to input directional commands.
- *
- * @param {string} path - The sequence of directional commands
- * @param {number} depth - The number of layers between the numpad and manual inputs
- * @returns {number} The minimum number of steps to input the sequence
- */
-const findBestRobotMovement = (path: string, depth: number): number => {
-  const id = `${path}-${depth}`;
+const bestRobot = (path: string, depth: number): number => {
   if (depth === 1) return path.length;
-  if (robotMemo.has(id)) return robotMemo.get(id)!;
-
   let result = 0;
-  let start = DIR_TO_LOC["A"];
-  for (const char of path) {
-    const end = DIR_TO_LOC[char];
-    result += findBestDirpadMove(start, end, depth);
+  let start = DIRPAD["A"];
+  const invalid = DIRPAD["Invalid"];
+  for (const val of path) {
+    const end = DIRPAD[val];
+    result += cheapestDirpadMove(start, end, depth - 1, invalid);
     start = end;
   }
-  robotMemo.set(id, result);
   return result;
 };
 
-/**
- * Finds the shortest path to go between two locations on the numpad, accounting
- * for the nested robot movements necessary.
- *
- * @param {Coord} start - The starting location
- * @param {Coord} end - The ending location
- * @param {number} depth - The number of layers between the numpad and manual inputs
- * @returns {number} The minimum number of steps to go from start to end
- */
-const findShortestNumpadPath = (start: Coord, end: Coord, depth: number): number => {
+const cheapestDirpadMove = (
+  start: Position,
+  end: Position,
+  robots: number,
+  invalid: Position
+): number => {
   let result = Infinity;
-  const queue = new Queue([{ ...start, path: "" }]);
+  const queue = new Queue<Node>([{ ...start, path: "" }]);
+
   while (!queue.isEmpty) {
     const { x, y, path } = queue.dequeue();
     if (x === end.x && y === end.y) {
-      result = Math.min(result, findBestRobotMovement(`${path}A`, depth));
-    } else {
-      for (const [char, { dx, dy }] of Object.entries(DELTA)) {
-        if (isCloser(x, end.x, dx) || isCloser(y, end.y, dy)) {
-          queue.enqueue({ x: x + dx, y: y + dy, path: path + char });
-        }
-      }
+      result = Math.min(result, bestRobot(`${path}A`, robots));
+    } else if (x !== invalid.x || y !== invalid.y) {
+      if (x < end.x) queue.enqueue({ x: x + 1, y, path: `${path}>` });
+      else if (x > end.x) queue.enqueue({ x: x - 1, y, path: `${path}<` });
+      if (y < end.y) queue.enqueue({ x, y: y + 1, path: `${path}v` });
+      else if (y > end.y) queue.enqueue({ x, y: y - 1, path: `${path}^` });
     }
   }
   return result;
 };
 
-/**
- * Finds the minimum number of manual presses needed to input a given pattern.
- *
- * @param {number} pattern - The code to enter
- * @param {number} [depth=3] - The number of layers between the numpad and manual inputs
- * @returns {number} The minimum number of presses to input the code
- */
-const findShortestManualPattern = (pattern: string, depth: number = 3): number => {
-  // console.log("findShortestManualPattern");
+const shortestManualSequence = (value: string, robotCount: number = 3): number => {
+  const invalid = NUMPAD["Invalid"];
   let result = 0;
-  let start = NUM_TO_LOC["A"];
-  for (const char of pattern) {
-    const end = NUM_TO_LOC[char];
-    result += findShortestNumpadPath(start, end, depth);
+  let start = NUMPAD["A"];
+  for (const val of value) {
+    const end = NUMPAD[val];
+    result += cheapestNumpadMove(start, end, robotCount, invalid)!;
     start = end;
   }
   return result;
 };
+
+const complexity = (value: string): number => parseInt(value, 10) * shortestManualSequence(value);
 
 // Results
-for (const { pattern, expected } of sample) {
-  const result = findShortestManualPattern(pattern);
-  console.log(result, expected, result === expected);
-}
+// const expectedSampleResult = [68, 60, 68, 64, 64];
 
+// for (let i = 0; i < sample.length; i++) {
+//   const result = shortestManualSequence(sample[i]);
+//   console.log(result, result === expectedSampleResult[i]);
+// }
+
+console.log(sum(input.map(complexity)));
