@@ -10,13 +10,10 @@ const input: bigint[] = readFile(`${__dirname}/input.txt`, ["\n"], BigInt) as bi
 const sample: bigint[] = [1, 10, 100, 2024].map(BigInt);
 
 // Part 1
-const memo = new Map<bigint, bigint>();
-
 const mix = (secret: bigint, n: bigint): bigint => n ^ secret;
 const prune = (secret: bigint): bigint => secret % 16777216n;
 
 const nextSecret = (initial: bigint): bigint => {
-  if (memo.has(initial)) return memo.get(initial)!;
   let result = initial;
   const a = result * 64n;
   result = prune(mix(a, result));
@@ -24,7 +21,6 @@ const nextSecret = (initial: bigint): bigint => {
   result = prune(mix(b, result));
   const c = result * 2048n;
   result = prune(mix(c, result));
-  memo.set(initial, result);
   return result;
 };
 
