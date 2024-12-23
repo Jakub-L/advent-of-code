@@ -189,12 +189,6 @@ function* getCliques(graph: Graph): Generator<string[], void, unknown> {
 }
 
 // Results
-console.time("Construct");
 const network = new Graph(input);
-console.timeEnd("Construct");
-console.time("Part 1");
-console.log(network.getHistorianNetworks(3).length);
-console.timeEnd("Part 1");
-console.time("Part 2");
-console.log(network.lanPartyPassword);
-console.timeEnd("Part 2");
+console.log(`Part 1: ${network.getHistorianNetworks().length}`);
+console.log(`Part 2: ${network.lanPartyPassword}`);
