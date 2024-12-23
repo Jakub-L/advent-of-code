@@ -1,5 +1,5 @@
 import { intersection } from "@jakub-l/aoc-lib/collections";
-import { Queue } from "@jakub-l/aoc-lib/data-structures";
+import { MinHeap, Queue } from "@jakub-l/aoc-lib/data-structures";
 import { readFile } from "@jakub-l/aoc-lib/input-parsing";
 
 // Types
@@ -171,9 +171,9 @@ function* getCliques(graph: Graph): Generator<string[], void, unknown> {
     commonNeighbors: nbors[nodeId].sort((a, b) => index[a.id] - index[b.id])
   }));
 
-  const queue = new Queue(initialQueue);
+  const queue = new MinHeap(initialQueue, e => e.clique.length);
   while (!queue.isEmpty) {
-    const { clique, commonNeighbors } = queue.dequeue();
+    const { clique, commonNeighbors } = queue.pop()!;
     yield clique;
     for (let i = 0; i < commonNeighbors.length; i++) {
       const nextNode = commonNeighbors[i];
@@ -183,7 +183,7 @@ function* getCliques(graph: Graph): Generator<string[], void, unknown> {
       // (since they were already common to the base, this means they are now common to
       // the new base).
       const newCnbrs = commonNeighbors.slice(i + 1).filter(n => nbors[nextNode.id].includes(n));
-      queue.enqueue({ clique: newBase, commonNeighbors: newCnbrs });
+      queue.add({ clique: newBase, commonNeighbors: newCnbrs });
     }
   }
 }
