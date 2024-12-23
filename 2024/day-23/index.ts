@@ -68,6 +68,7 @@ class Node {
 class Graph {
   public _nodes: Map<string, Node> = new Map();
   public _tComputers: Set<string> = new Set();
+  public _lanPartyPassword: string | null = null;
 
   constructor(connections?: string[][]) {
     if (connections) {
@@ -108,6 +109,16 @@ class Graph {
     return result;
   }
 
+  get lanPartyPassword(): string {
+    if (this._lanPartyPassword) return this._lanPartyPassword;
+    let largestClique: string[] = [];
+    for (const clique of getCliques(this)) largestClique = clique;
+    console.log(largestClique);
+
+    this._lanPartyPassword = largestClique.sort().join(",");
+    return this._lanPartyPassword;
+  }
+
   get vertices(): string[] {
     return Array.from(this._nodes.keys());
   }
@@ -144,5 +155,5 @@ function* getCliques(graph: Graph) {
 
 // Results
 const network = new Graph(input);
-// console.log(network.getNode("kh"));
-console.log(network.getHistorianNetworks(3).length);
+// console.log(network.getHistorianNetworks(3).length);
+console.log(network.lanPartyPassword);
