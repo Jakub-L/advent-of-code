@@ -1,8 +1,15 @@
 import { difference, intersection, union } from "@jakub-l/aoc-lib/collections";
+import { MinHeap, Queue } from "@jakub-l/aoc-lib/data-structures";
 import { readFile } from "@jakub-l/aoc-lib/input-parsing";
 
 // Types
-type Network = Set<string>;
+/** A node in the clique generating queue */
+type CliqueNode = {
+  /** The clique */
+  base: string[];
+  /** Set of common neighbours of the nodes in the base */
+  cnbrs: Node[];
+};
 
 // Constants
 
@@ -44,49 +51,98 @@ td-yn`
   .map(line => line.split("-"));
 
 // Part 1
-class LocalNetwork {
-  public _directConnections: Record<string, Network> = {};
+class Node {
+  public id: string;
+  public neighbors: Map<string, Node> = new Map();
+
+  constructor(id: string) {
+    this.id = id;
+  }
+
+  public connect(node: Node) {
+    this.neighbors.set(node.id, node);
+    node.neighbors.set(this.id, this);
+  }
+}
+
+class Graph {
+  public _nodes: Map<string, Node> = new Map();
   public _tComputers: Set<string> = new Set();
 
-  constructor(connections: string[][]) {
-    for (const [a, b] of connections) {
-      const aNetwork = this._directConnections[a] || new Set<string>();
-      const bNetwork = this._directConnections[b] || new Set<string>();
-      aNetwork.add(b);
-      bNetwork.add(a);
-      this._directConnections[a] = aNetwork;
-      this._directConnections[b] = bNetwork;
-      if (a.startsWith("t")) this._tComputers.add(a);
-      if (b.startsWith("t")) this._tComputers.add(b);
+  constructor(connections?: string[][]) {
+    if (connections) {
+      for (const [id1, id2] of connections) {
+        this.connect(id1, id2);
+        if (id1.startsWith("t")) this._tComputers.add(id1);
+        if (id2.startsWith("t")) this._tComputers.add(id2);
+      }
     }
   }
 
-  public getConnectedThrees() {
-    const result: Set<string> = new Set();
-    for (const a in this._directConnections) {
-      for (const b of this._directConnections[a]) {
-        const inBoth = intersection(this._directConnections[a], this._directConnections[b]);
-        if (inBoth.size > 0) {
-          for (const c of inBoth) {
-            if (intersection(this._tComputers, new Set([a, b, c])).size > 0) {
-              const key = [a, b, c].sort().join(",");
-              result.add(key);
-            }
-          }
+  public addNode(id: string): Node {
+    this._nodes.set(id, new Node(id));
+    return this._nodes.get(id)!;
+  }
+
+  public getNode(id: string) {
+    return this._nodes.get(id);
+  }
+
+  public connect(id1: string, id2: string) {
+    const node1 = this.getNode(id1) ?? this.addNode(id1);
+    const node2 = this.getNode(id2) ?? this.addNode(id2);
+    node1.connect(node2);
+  }
+
+  public getHistorianNetworks(size: number = 3): string[][] {
+    const result = [];
+    for (const clique of getCliques(this)) {
+      if (clique.length > size) return result;
+      if (clique.length === size) {
+        const cliqueSet = new Set(clique);
+        if (intersection(cliqueSet, this._tComputers).size > 0) {
+          result.push(clique);
         }
       }
     }
     return result;
   }
+
+  get vertices(): string[] {
+    return Array.from(this._nodes.keys());
+  }
+}
+
+function* getCliques(graph: Graph) {
+  const index: Record<string, number> = {};
+  const neighbors: Record<string, Node[]> = {};
+  const vertices = graph.vertices;
+
+  for (let i = 0; i < vertices.length; i++) {
+    const node = graph.getNode(vertices[i])!;
+    index[node.id] = i;
+    neighbors[node.id] = Array.from(node.neighbors.values()).filter(n => !(n.id in index));
+  }
+
+  const initialQueue = vertices.map(vId => ({
+    base: [vId],
+    cnbrs: neighbors[vId].sort((a, b) => index[a.id] - index[b.id])
+  }));
+
+  const queue = new Queue(initialQueue);
+  while (!queue.isEmpty) {
+    const { base, cnbrs } = queue.dequeue();
+    yield base;
+    for (let i = 0; i < cnbrs.length; i++) {
+      const nextNode = cnbrs[i];
+      const newBase = [...base, nextNode.id];
+      const newCnbrs = cnbrs.slice(i + 1).filter(n => neighbors[nextNode.id].includes(n));
+      queue.enqueue({ base: newBase, cnbrs: newCnbrs });
+    }
+  }
 }
 
 // Results
-// console.log(input)
-const network = new LocalNetwork(input);
-// const a = network._directConnections["wq"];
-// const b = network._directConnections["tb"];
-// console.log(a, b, intersection(a, b));
-// const c = network._directConnections[]
-// console.log(intersection(network._directConnections["wq"], network._directConnections["vc"]))
-
-console.log(network.getConnectedThrees().size);
+const network = new Graph(input);
+// console.log(network.getNode("kh"));
+console.log(network.getHistorianNetworks(3).length);
