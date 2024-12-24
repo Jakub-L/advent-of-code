@@ -1,5 +1,6 @@
 import { Queue } from "@jakub-l/aoc-lib/data-structures";
 import { readFile } from "@jakub-l/aoc-lib/input-parsing";
+import { get } from "http";
 
 // prettier-ignore
 // Types & Enums
@@ -47,7 +48,6 @@ const getWireOutput = (initialState: InitialState, instructions: Instruction[]):
       queue.enqueue({ gate, registerA, registerB, output });
     }
   }
-
   const binaryOutput = Object.entries(state)
     .filter(([key]) => key.startsWith("z"))
     .sort(([a], [b]) => a.localeCompare(b))
@@ -55,5 +55,46 @@ const getWireOutput = (initialState: InitialState, instructions: Instruction[]):
   return parseInt(binaryOutput, 2);
 };
 
+// Part 2
+const startsWith = (str: string, prefixes: string[]): boolean => {
+  return prefixes.some(prefix => str.startsWith(prefix));
+};
+
+const findIncorrectGates = (initialState: InitialState, instructions: Instruction[]): string => {
+  const incorrect = new Set<string>();
+  const maxBit = Object.values(initialState).length / 2;
+
+  for (const { registerA, gate, registerB, output } of instructions) {
+    if (startsWith(output, ["z"]) && gate !== Gate.XOR && output !== `z${maxBit}`) {
+      incorrect.add(output);
+    }
+    if (
+      gate === Gate.XOR &&
+      !startsWith(output, ["x", "y", "z"]) &&
+      !startsWith(registerA, ["x", "y", "z"]) &&
+      !startsWith(registerB, ["x", "y", "z"])
+    ) {
+      incorrect.add(output);
+    }
+    if (gate === Gate.AND && ![registerA, registerB].includes("x00")) {
+      for (const subInstr of instructions) {
+        if ((output === subInstr.registerA || output === subInstr.registerB) && subInstr.gate !== Gate.OR) {
+          incorrect.add(output);
+        }
+      }
+    }
+    if (gate === Gate.XOR) {
+      for (const subInstr of instructions) {
+        if ((output === subInstr.registerA || output === subInstr.registerB) && subInstr.gate === Gate.OR) {
+          incorrect.add(output);
+        }
+      }
+    }
+  }
+
+  return [...incorrect].sort().join(",");
+};
+
 // Results
 console.log(getWireOutput(initialState, instructions));
+console.log(findIncorrectGates(initialState, instructions));
