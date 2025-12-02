@@ -37,5 +37,6 @@ const findInvalidIds = (productIds: number[][], onlyDoubles: boolean = true): nu
   return Array.from(new Set(invalidIds));
 };
 
+// Results
 console.log(`Part 1: ${findInvalidIds(input).reduce((a, b) => a + b, 0)}`);
 console.log(`Part 2: ${findInvalidIds(input, false).reduce((a, b) => a + b, 0)}`);
