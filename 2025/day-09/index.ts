@@ -1,6 +1,4 @@
 import { readFile } from "@jakub-l/aoc-lib/input-parsing";
-import { union } from "@jakub-l/aoc-lib/collections";
-import { prod } from "@jakub-l/aoc-lib/math";
 
 // Types
 type Point = { x: number; y: number };
@@ -8,16 +6,6 @@ type Edge = [Point, Point];
 
 // Input
 const input: Point[] = readFile(__dirname + "/input.txt", ["\n"], stringToPoint);
-const testInput: Point[] = `7,1
-11,1
-11,7
-9,7
-9,5
-2,5
-2,3
-7,3`
-  .split("\n")
-  .map(stringToPoint);
 
 /**
  * Parses a string coordinate into a Point object.
