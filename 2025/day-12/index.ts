@@ -1,12 +1,17 @@
 import { readFile } from "@jakub-l/aoc-lib/input-parsing";
 
 // Types
+/** A region of space */
 type Region = {
+  /** The width of the region */
   width: number;
+  /** The height of the region */
   height: number;
+  /** The numbers of each shape that must fit */
   shapes: number[];
 };
 
+/** A shape represented by the fields it occcupies */
 type Shape = Set<string>;
 
 // Input
@@ -14,6 +19,11 @@ const input: string[] = readFile(__dirname + "/input.txt", ["\n\n"]);
 const shapes = input.slice(0, 6).map(parseShape);
 const regions = input[6].split("\n").map(parseRegion);
 
+/**
+ * Converts a string representation of a region into a Region object.
+ * @param str - The string representation of the region
+ * @returns A parsed region object
+ */
 function parseRegion(str: string): Region {
   const [areaStr, shapesStr] = str.split(": ");
   const [width, height] = areaStr.split("x").map(Number);
@@ -21,6 +31,11 @@ function parseRegion(str: string): Region {
   return { width, height, shapes };
 }
 
+/**
+ * Converts a string representation of a shape into a Shape object.
+ * @param str - The string representation of the shape
+ * @returns A parsed shape object
+ */
 function parseShape(str: string): Shape {
   const fields = str.split("\n").slice(1);
   const occupied = new Set<string>();
@@ -34,11 +49,19 @@ function parseShape(str: string): Shape {
   return occupied;
 }
 
-console.log(shapes);
-
 // Part 1
+/**
+ * Calculates the area of a region.
+ * @param region - The region to inspect
+ * @returns The area of the region
+ */
 const area = (region: Region): number => region.width * region.height;
 
+/**
+ * Determines if a region can fit the required shapes.
+ * @param region - The region to inspect
+ * @returns Whether the region can fit the shapes
+ */
 const canRegionFit = (region: Region): boolean => {
   const totalArea = area(region);
 
@@ -49,6 +72,8 @@ const canRegionFit = (region: Region): boolean => {
   if (totalArea >= maximumShapesArea) return true;
   if (totalArea < minimumShapesArea) return false;
 
+  // Turns out that this is sufficient for the input data
+  // Normally further analysis would be required here
   return false;
 };
 
